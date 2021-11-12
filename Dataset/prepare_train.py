@@ -36,7 +36,7 @@ def prepare_training_set(src_files, dst_path):
     h5f = h5py.File(h5py_name, 'w')
 
     count = 0
-    for src_path in src_path_list:
+    for src_path in src_files:
         file_path = glob.glob(src_path + '*')
         for file_name in file_path:
             if 'SIDD' in file_name:
@@ -62,11 +62,11 @@ def prepare_training_set(src_files, dst_path):
                 noisy_imgs = glob.glob(file_name + '/*Noisy.bmp')
                 noisy_imgs.sort()
 
+                print('RENOIR processing...' + str(count) + file_name)
                 ref = np.array(Image.open(ref_imgs[0])).astype(np.float32)
                 full = np.array(Image.open(full_imgs[0])).astype(np.float32)
                 gt = (ref + full) / 2
                 gt = np.clip(gt, 0, 255).astype(np.uint8)
-                print('RENOIR processing...' + str(count))
                 for i in range(len(noisy_imgs)):
                     noisy = np.array(Image.open(noisy_imgs[i]))
                     img = np.concatenate([noisy, gt], 2)
@@ -82,14 +82,24 @@ def prepare_training_set(src_files, dst_path):
 
 if __name__ == "__main__":
     os.environ["CUDA_VISIBLE_DEVICES"] = "1"
-    src_path_list = ["./train/SIDD/SIDD_Medium_Srgb/Data/",
-                     "./train/RENOIR/Mi3_Aligned/",
+    src_path_list_1 = ["./train/SIDD/SIDD_Medium_Srgb/Data/"]
+    src_path_list_2 = ["./train/RENOIR/Mi3_Aligned/",
                      "./train/RENOIR/T3i_Aligned/",
                      "./train/RENOIR/S90_Aligned/",
                      ]
     dst_path = "train/train/SIDD_RENOIR_h5/"
+    dst_path_sidd = "train/train/SIDD_h5/"
+    dst_path_renoir = "train/train/RENOIR_h5/"
 
     create_dir(dst_path)
     print("start...")
-    prepare_training_set(src_path_list, dst_path)
+    # print("start...SIDD_RENOIR_h5...")
+    # prepare_training_set(src_path_list, dst_path)
+    # print("end...SIDD_RENOIR_h5")
+    print("start...SIDD_h5...")
+    prepare_training_set(src_path_list_1, dst_path_sidd)
+    print("end...SIDD_h5")
+    print("start...RENOIR_h5...")
+    prepare_training_set(src_path_list_2, dst_path_renoir)
+    print("end...RENOIR_h5")
     print('end')
