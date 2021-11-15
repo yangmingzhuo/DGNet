@@ -3,4 +3,5 @@
 /Dataset/test/test/
 /Dataset/train/RENOIR/
 /Dataset/train/SIDD/
-/Dataset/train/train/
+/Dataset/train/train.h5
+/Dataset/test/val.h5

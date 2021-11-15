@@ -6,62 +6,6 @@ import random
 import h5py
 import torch.utils.data as data
 
-class Dataset_from_read(data.Dataset):
-
-    def __init__(self, src_path, sigma, transform=None):
-        self.path = glob.glob(src_path + '*.png')
-        self.path.sort()
-        self.sigma = sigma
-        self.transform = transform
-
-    def __getitem__(self, index):
-        clean = Image.open(self.path[index])
-
-        if self.transform:
-            clean = self.transform(clean)
-
-        noise = torch.randn(clean.size()).mul_(self.sigma/255.0)
-        noisy = clean + noise
-        noisy = torch.clamp(noisy, 0.0, 1.0)
-        return noisy, clean
-
-    def __len__(self):
-        return len(self.path)
-
-class Dataset_from_h5(data.Dataset):
-
-    def __init__(self, src_path, sigma, gray=False, transform=None):
-        self.path = src_path
-        h5f = h5py.File(self.path, 'r')
-        self.keys = list(h5f.keys())
-        random.shuffle(self.keys)
-        h5f.close()
-
-        self.sigma = sigma
-        self.gray = gray
-        self.transform = transform
-
-    def __getitem__(self, index):
-        h5f = h5py.File(self.path, 'r')
-        key = self.keys[index]
-        data = np.array(h5f[key]).reshape(h5f[key].shape)
-        clean = Image.fromarray(np.uint8(data*255))
-        h5f.close()
-
-        if self.gray:
-            clean = clean.convert('L')
-
-        if self.transform:
-            clean = self.transform(clean)
-
-        #noise = torch.randn(clean.size()).mul_(self.sigma/255.0)
-        noise = torch.normal(torch.zeros(clean.size()), self.sigma/255.0)
-        noisy = clean + noise
-        noisy = torch.clamp(noisy, 0.0, 1.0)
-        return noisy, clean
-
-    def __len__(self):
-        return len(self.keys)
 
 class Dataset_h5_real(data.Dataset):
 

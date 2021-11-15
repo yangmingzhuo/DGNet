@@ -1,11 +1,11 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+import torch.nn.functional
 
 
-class UNet(nn.Module):
+class DGNet(nn.Module):
     def __init__(self, num_classes=10):
-        super(UNet, self).__init__()
+        super(DGNet, self).__init__()
 
         # device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.conv1_1 = nn.Conv2d(4, 32, kernel_size=3, stride=1, padding=1)
@@ -98,13 +98,8 @@ class UNet(nn.Module):
             if isinstance(m, nn.ConvTranspose2d):
                 m.weight.data.normal_(0.0, 0.02)
 
-    def lrelu(self, x):
-        outt = torch.max(0.2 * x, x)
-        return outt
+    @staticmethod
+    def lrelu(x):
+        output = torch.max(0.2 * x, x)
+        return output
 
-def print_network(net):
-    num_params = 0
-    for param in net.parameters():
-        num_params += param.numel()
-    print(net)
-    print('Total number of parameters: %d' % num_params)
