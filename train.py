@@ -8,9 +8,9 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.backends.cudnn as cudnn
 from torch.utils.data import DataLoader
-from model import DGNet
+from model.SID_UNet import SID_UNet
 from skimage.measure.simple_metrics import compare_psnr
-from dataloader import *
+from data.dataloader import *
 from utils.util import get_logger
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
@@ -41,9 +41,9 @@ parser.add_argument("--val_noiseL", type=float, default=25, help='noise level us
 # Global settings
 parser.add_argument('--threads', type=int, default=4, help='number of threads for data loader to use')
 parser.add_argument('--gpus', default=1, type=int, help='number of gpus')
-parser.add_argument('--data_dir', type=str, default='./Dataset', help='the dataset dir')
+parser.add_argument('--data_dir', type=str, default='./data', help='the dataset dir')
 parser.add_argument('--model_type', type=str, default='DGNet', help='the name of model')
-parser.add_argument('--patch_size', type=int, default=150, help='Size of cropped HR image')
+parser.add_argument('--patch_size', type=int, default=128, help='Size of cropped HR image')
 
 
 opt = parser.parse_args()

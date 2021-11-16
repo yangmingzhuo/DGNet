@@ -2,13 +2,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional
 
-
-class DGNet(nn.Module):
-    def __init__(self, num_classes=10):
-        super(DGNet, self).__init__()
+class ELDUNet(nn.Module):
+    def __init__(self, in_channels=3, out_channels=3):
+        super(ELDUNet, self).__init__()
 
         # device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-        self.conv1_1 = nn.Conv2d(4, 32, kernel_size=3, stride=1, padding=1)
+        self.conv1_1 = nn.Conv2d(in_channels, 32, kernel_size=3, stride=1, padding=1)
         self.conv1_2 = nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
         self.pool1 = nn.MaxPool2d(kernel_size=2)
 
@@ -43,7 +42,7 @@ class DGNet(nn.Module):
         self.conv9_1 = nn.Conv2d(64, 32, kernel_size=3, stride=1, padding=1)
         self.conv9_2 = nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
 
-        self.conv10_1 = nn.Conv2d(32, 12, kernel_size=1, stride=1)
+        self.conv10_1 = nn.Conv2d(32, out_channels, kernel_size=1, stride=1)
 
     def forward(self, x):
         conv1 = self.lrelu(self.conv1_1(x))
@@ -86,7 +85,8 @@ class DGNet(nn.Module):
         conv9 = self.lrelu(self.conv9_2(conv9))
 
         conv10 = self.conv10_1(conv9)
-        out = nn.functional.pixel_shuffle(conv10, 2)
+        # out = nn.functional.pixel_shuffle(conv10, 2)
+        out = conv10
         return out
 
     def _initialize_weights(self):
@@ -98,8 +98,6 @@ class DGNet(nn.Module):
             if isinstance(m, nn.ConvTranspose2d):
                 m.weight.data.normal_(0.0, 0.02)
 
-    @staticmethod
-    def lrelu(x):
-        output = torch.max(0.2 * x, x)
-        return output
-
+    def lrelu(self, x):
+        outt = torch.max(0.2 * x, x)
+        return outt

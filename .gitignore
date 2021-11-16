@@ -1,7 +1,7 @@
-/Dataset/test/RENOIR/
-/Dataset/test/SIDD/
-/Dataset/test/test/
-/Dataset/train/RENOIR/
-/Dataset/train/SIDD/
-/Dataset/train/train.h5
-/Dataset/test/val.h5
+/data/test/RENOIR/
+/data/test/SIDD/
+/data/test/test/
+/data/train/RENOIR/
+/data/train/SIDD/
+/data/train/train.h5
+/data/test/val.h5

@@ -128,7 +128,7 @@ def prepare_data(src_files, dst_path_test, dst_path_train):
                     noisy = np.array(Image.open(noisy_imgs[i]))
                     img = np.concatenate([noisy, gt], 2)
                     [h, w, c] = img.shape
-                    patch_list = crop_patch(img, (h, w), (150, 150), 150, False)
+                    patch_list = crop_patch(img, (h, w), (256, 256), 256, False)
                     for num in range(len(patch_list)):
                         data = patch_list[num].copy()
                         h5f_test.create_dataset(str(count), shape=(300, 300, 6), data=data)
