@@ -6,7 +6,7 @@ import torch
 import glob
 from natsort import natsorted
 from collections import OrderedDict
-from skimage.measure.simple_metrics import compare_psnr
+from skimage.metrics import peak_signal_noise_ratio as compare_psnr
 
 
 def get_logger(save_path, logger_name):

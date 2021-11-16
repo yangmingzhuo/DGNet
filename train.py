@@ -20,12 +20,11 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
 parser = argparse.ArgumentParser(description='PyTorch Super Res Example')
 parser.add_argument('--upscale_factor', type=int, default=1, help="super resolution upscale factor")
 parser.add_argument('--batch_size', type=int, default=8, help='training batch size')
-parser.add_argument('--nEpochs', type=int, default=2000, help='number of epochs to train for')
+parser.add_argument('--nEpochs', type=int, default=1000, help='number of epochs to train for')
 parser.add_argument('--start_iter', type=int, default=1, help='starting epoch')
-parser.add_argument('--lr', type=float, default=0.0002, help='learning rate. default=0.0001')
-parser.add_argument('--lr_min', type=float, default=0.000001, help='learning rate. default=0.0001')
+parser.add_argument('--lr', type=float, default=0.0002, help='learning rate. default=0.0002')
+parser.add_argument('--lr_min', type=float, default=0.000001, help='minimum learning rate. default=0.000001')
 parser.add_argument('--data_augmentation', type=bool, default=True, help='if adopt augmentation when training')
-parser.add_argument('--hr_train_dataset', type=str, default='DIV2K_train_HR', help='the training dataset')
 parser.add_argument('--save_folder', default='./checkpoint/', help='Location to save checkpoint models')
 parser.add_argument('--statistics', default='./statistics/', help='Location to save statistics')
 parser.add_argument('--resume', default=False, help='Whether to resume the training')
@@ -64,7 +63,6 @@ def train(epoch, model, data_loader, optimizer, criterion, logger):
 
         prediction = model(input)
 
-        # Corresponds to the Optimized Scheme
         loss = criterion(prediction, target)/(input.size()[0]*2)
 
         t1 = time.time()
