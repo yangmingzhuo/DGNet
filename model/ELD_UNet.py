@@ -2,9 +2,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional
 
-class ELDUNet(nn.Module):
+
+class ELD_UNet(nn.Module):
     def __init__(self, in_channels=3, out_channels=3):
-        super(ELDUNet, self).__init__()
+        super(ELD_UNet, self).__init__()
 
         # device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.conv1_1 = nn.Conv2d(in_channels, 32, kernel_size=3, stride=1, padding=1)
