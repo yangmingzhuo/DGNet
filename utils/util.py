@@ -50,7 +50,7 @@ def print_network(net, logger):
 
 
 def get_last_path(path, session):
-    x = natsorted(glob(os.path.join(path, '*%s' % session)))[-1]
+    x = natsorted(glob.glob(os.path.join(path, '*{}'.format(session))))[-1]
     return x
 
 

@@ -72,12 +72,6 @@ def train(epoch, model, data_loader, optimizer, criterion, logger):
         loss.backward()
         optimizer.step()
 
-        if (iteration+1) % 50 == 0:
-            model.eval()
-            SC = 'net_epoch_' + str(epoch) + '_' + str(iteration + 1) + '.pth'
-            torch.save(model.state_dict(), os.path.join(opt.save_folder, SC))
-            model.train()
-
         logger.info("===> Epoch[{}]({}/{}): Loss: {:.4f} || Timer: {:.4f} sec.".format(epoch, iteration, len(data_loader), loss.data, (t1 - t0)))
     logger.info("===> Epoch {} Complete: Avg. Loss: {:.4f}".format(epoch, epoch_loss / len(data_loader)))
 
@@ -121,6 +115,7 @@ def main():
     logger.info('----------------------------------------------')
 
     # Scheduler
+    start_epoch = opt.start_iter
     optimizer = optim.Adam(model.parameters(), lr=opt.lr, betas=(0.9, 0.999), eps=1e-8)
     warmup_epochs = 3
     scheduler_cosine = optim.lr_scheduler.CosineAnnealingLR(optimizer, opt.nEpochs - warmup_epochs + 40, eta_min=opt.lr_min)
@@ -139,8 +134,9 @@ def main():
         logger.info("==> Resuming Training with learning rate:{}".format(new_lr))
         logger.info('------------------------------------------------------------------------------')
 
+    # Training
     PSNR = []
-    for epoch in range(opt.start_iter, opt.nEpochs + 1):
+    for epoch in range(start_epoch, opt.nEpochs + 1):
         train(epoch, model, training_data_loader, optimizer, criterion, logger)
         psnr = valid(testing_data_loader, model, logger)
         PSNR.append(psnr)
@@ -148,7 +144,6 @@ def main():
             data={'epoch': epoch, 'PSNR': PSNR}, index=range(1, epoch+1)
         )
         data_frame.to_csv(os.path.join(opt.statistics, 'training_logs.csv'), index_label='index')
-        # learning rate is decayed by a factor of 10 every half of total epochs
         scheduler.step()
         torch.save({'epoch': epoch,
                     'state_dict': model.state_dict(),
