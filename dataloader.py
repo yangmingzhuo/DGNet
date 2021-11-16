@@ -45,12 +45,8 @@ class Dataset_h5_real(data.Dataset):
             patch = data
 
         patch = np.clip(patch.astype(np.float32)/255.0, 0.0, 1.0)
-        if self.gray:
-            noisy = np.expand_dims(patch[:, :, 0], -1)
-            clean = np.expand_dims(patch[:, :, 1], -1)
-        else:
-            noisy = patch[:, :, 0:3]
-            clean = patch[:, :, 3:6]
+        noisy = patch[:, :, 0:3]
+        clean = patch[:, :, 3:6]
 
         noisy = torch.from_numpy(np.ascontiguousarray(np.transpose(noisy, (2, 0, 1)))).float()
         clean = torch.from_numpy(np.ascontiguousarray(np.transpose(clean, (2, 0, 1)))).float()
