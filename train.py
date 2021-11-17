@@ -18,9 +18,8 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
 
 # Training settings
 parser = argparse.ArgumentParser(description='PyTorch Super Res Example')
-parser.add_argument('--upscale_factor', type=int, default=1, help="super resolution upscale factor")
 parser.add_argument('--batch_size', type=int, default=8, help='training batch size')
-parser.add_argument('--nEpochs', type=int, default=1000, help='number of epochs to train for')
+parser.add_argument('--nEpochs', type=int, default=100, help='number of epochs to train for')
 parser.add_argument('--start_iter', type=int, default=1, help='starting epoch')
 parser.add_argument('--lr', type=float, default=0.0002, help='learning rate. default=0.0002')
 parser.add_argument('--lr_min', type=float, default=0.000001, help='minimum learning rate. default=0.000001')
