@@ -9,6 +9,11 @@ from collections import OrderedDict
 from skimage.metrics import peak_signal_noise_ratio as compare_psnr
 
 
+def mkdir(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+
 def get_logger(save_path, logger_name):
     """
     Initialize logger

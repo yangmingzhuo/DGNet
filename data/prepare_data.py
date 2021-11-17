@@ -63,7 +63,7 @@ def prepare_sidd_data(src_files_test, src_files_train, dst_path_test, dst_path_t
     noisy_data_mat = loadmat(noisy_data_mat_file)[noisy_data_mat_name]
     clean_data_mat = loadmat(clean_data_mat_file)[clean_data_mat_name]
 
-    # prepare training data
+    # prepare testing data
     for image_index in tqdm(range(noisy_data_mat.shape[0])):
         print('SIDD processing...' + str(count))
         for block_index in range(noisy_data_mat.shape[1]):
@@ -76,7 +76,7 @@ def prepare_sidd_data(src_files_test, src_files_train, dst_path_test, dst_path_t
             h5f_test.create_dataset(str(count), shape=(256, 256, 6), data=data)
             count += 1
 
-    # prepare testing data
+    # prepare training data
     count = 0
     for src_path in src_files_train:
         file_path = glob.glob(src_path + '*')
@@ -95,7 +95,7 @@ def prepare_sidd_data(src_files_test, src_files_train, dst_path_test, dst_path_t
                     patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, False)
                     for num in range(len(patch_list)):
                         data = patch_list[num].copy()
-                        h5f_train.create_dataset(str(count), shape=(patch_size, patch_size, c * 2), data=data)
+                        h5f_train.create_dataset(str(count), shape=(patch_size, patch_size, c), data=data)
                         count += 1
 
 
@@ -136,7 +136,7 @@ def prepare_renoir_data(src_files, dst_path_test, dst_path_train, patch_size):
                     patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, False)
                     for num in range(len(patch_list)):
                         data = patch_list[num].copy()
-                        h5f_train.create_dataset(str(count), shape=(patch_size, patch_size, c * 2), data=data)
+                        h5f_train.create_dataset(str(count), shape=(patch_size, patch_size, c), data=data)
                         count += 1
 
         # prepare testing data
@@ -159,7 +159,7 @@ def prepare_renoir_data(src_files, dst_path_test, dst_path_train, patch_size):
                     patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, False)
                     for num in range(len(patch_list)):
                         data = patch_list[num].copy()
-                        h5f_test.create_dataset(str(count), shape=(300, 300, 6), data=data)
+                        h5f_test.create_dataset(str(count), shape=(patch_size, patch_size, c * 2), data=data)
                         count += 1
 
     h5f_train.close()
@@ -168,7 +168,7 @@ def prepare_renoir_data(src_files, dst_path_test, dst_path_train, patch_size):
 
 def main():
     random.seed(0)
-    patch_size = 300
+    patch_size = 256
     os.environ["CUDA_VISIBLE_DEVICES"] = "1"
     src_path_list_1 = ["./test/SIDD/"]
     src_path_list_2 = ["./train/SIDD/SIDD_Medium_Srgb/Data/"]
@@ -182,9 +182,9 @@ def main():
     create_dir(dst_path_test)
     create_dir(dst_path_train)
     print("start...")
-    # print("start...SIDD...")
-    # prepare_sidd_data(src_path_list_1, src_path_list_2, dst_path_test, dst_path_train, patch_size)
-    # print("end...SIDD")
+    print("start...SIDD...")
+    prepare_sidd_data(src_path_list_1, src_path_list_2, dst_path_test, dst_path_train, patch_size)
+    print("end...SIDD")
     print("start...RENOIR...")
     prepare_renoir_data(src_path_list_3, dst_path_test, dst_path_train, patch_size)
     print("end...RENOIR")
