@@ -15,10 +15,6 @@ def mkdir(path):
 
 
 def get_logger(save_path, logger_name):
-    """
-    Initialize logger
-    """
-
     logger = logging.getLogger(logger_name)
     file_formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
     console_formatter = logging.Formatter('%(message)s')

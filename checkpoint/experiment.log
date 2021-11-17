@@ -17,3 +17,159 @@
 2021-11-16 11:29:22,242 INFO: ===> Loading datasetsDGNet
 2021-11-16 22:21:57,438 INFO: Namespace(Ispretrained=False, batch_size=8, data_augmentation=True, data_dir='./data', gpus=1, hr_train_dataset='DIV2K_train_HR', lr=0.0001, model_type='DGNet', nEpochs=2000, noiseL=25, patch_size=128, pretrained='./Deam_models', pretrained_sr='noise25.pth', save_folder='./checkpoint/', seed=123, start_iter=1, statistics='./statistics/', test_batch_size=1, test_dataset='Set12', threads=4, upscale_factor=1, val_noiseL=25)
 2021-11-16 22:21:57,438 INFO: ===>Loading datasets
+2021-11-17 16:40:09,830 INFO: Namespace(batch_size=32, data_augmentation=True, data_dir='./data', gpus=1, lr=0.0002, lr_min=1e-06, model_type='DGNet', nEpochs=100, patch_size=128, resume=False, save_folder='./checkpoint/', seed=123, start_iter=1, testBatchSize=1, threads=4, trained_model='./trained_model/')
+2021-11-17 16:40:09,831 INFO: ===>Loading datasets
+2021-11-17 16:40:40,227 INFO: Namespace(batch_size=32, data_augmentation=True, data_dir='./data', gpus=1, lr=0.0002, lr_min=1e-06, model_type='DGNet', nEpochs=100, patch_size=128, resume=False, save_folder='./checkpoint/', seed=123, start_iter=1, test_batch_size=1, threads=4, trained_model='./trained_model/')
+2021-11-17 16:40:40,227 INFO: ===>Loading datasets
+2021-11-17 16:40:40,353 INFO: ===> Building model DGNet
+2021-11-17 16:40:40,415 INFO: ---------- Networks architecture -------------
+2021-11-17 16:40:40,415 INFO: DataParallel(
+  (module): ELD_UNet(
+    (conv1_1): Conv2d(3, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (conv1_2): Conv2d(32, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (pool1): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+    (conv2_1): Conv2d(32, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (conv2_2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (pool2): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+    (conv3_1): Conv2d(64, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (conv3_2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (pool3): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+    (conv4_1): Conv2d(128, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (conv4_2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (pool4): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+    (conv5_1): Conv2d(256, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (conv5_2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (upv6): ConvTranspose2d(512, 256, kernel_size=(2, 2), stride=(2, 2))
+    (conv6_1): Conv2d(512, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (conv6_2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (upv7): ConvTranspose2d(256, 128, kernel_size=(2, 2), stride=(2, 2))
+    (conv7_1): Conv2d(256, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (conv7_2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (upv8): ConvTranspose2d(128, 64, kernel_size=(2, 2), stride=(2, 2))
+    (conv8_1): Conv2d(128, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (conv8_2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (upv9): ConvTranspose2d(64, 32, kernel_size=(2, 2), stride=(2, 2))
+    (conv9_1): Conv2d(64, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (conv9_2): Conv2d(32, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (conv10_1): Conv2d(32, 3, kernel_size=(1, 1), stride=(1, 1))
+  )
+)
+2021-11-17 16:40:40,416 INFO: Total number of parameters: 7760163
+2021-11-17 16:40:40,416 INFO: ----------------------------------------------
+2021-11-17 22:19:20,344 INFO: Namespace(batch_size=32, data_augmentation=True, data_dir='./data', gpus=1, lr=0.0002, lr_min=1e-06, model_type='DGNet', nEpochs=100, patch_size=128, resume=False, save_folder='./checkpoint/', seed=123, start_iter=1, test_batch_size=1, threads=4, trained_model='./trained_model/')
+2021-11-17 22:19:20,344 INFO: ===>Loading datasets
+2021-11-17 22:19:41,787 INFO: Namespace(batch_size=32, data_augmentation=True, data_dir='./data', gpus=1, lr=0.0002, lr_min=1e-06, model_type='DGNet', nEpochs=100, patch_size=128, resume=False, save_folder='./checkpoint/', seed=123, start_iter=1, test_batch_size=1, threads=4, trained_model='./trained_model/')
+2021-11-17 22:19:41,787 INFO: ===>Loading datasets
+2021-11-17 22:24:14,518 INFO: Namespace(batch_size=32, data_augmentation=True, data_dir='./data', gpus=1, lr=0.0002, lr_min=1e-06, model_type='DGNet', nEpochs=100, patch_size=128, resume=False, save_folder='./checkpoint/', seed=123, start_iter=1, test_batch_size=1, threads=4, trained_model='./trained_model/')
+2021-11-17 22:24:14,518 INFO: ===>Loading datasets
+2021-11-17 22:24:14,519 INFO: ===> Building model DGNet
+2021-11-17 22:24:14,573 INFO: ---------- Networks architecture -------------
+2021-11-17 22:24:14,573 INFO: DataParallel(
+  (module): ELD_UNet(
+    (conv1_1): Conv2d(3, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (conv1_2): Conv2d(32, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (pool1): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+    (conv2_1): Conv2d(32, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (conv2_2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (pool2): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+    (conv3_1): Conv2d(64, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (conv3_2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (pool3): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+    (conv4_1): Conv2d(128, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (conv4_2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (pool4): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+    (conv5_1): Conv2d(256, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (conv5_2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (upv6): ConvTranspose2d(512, 256, kernel_size=(2, 2), stride=(2, 2))
+    (conv6_1): Conv2d(512, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (conv6_2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (upv7): ConvTranspose2d(256, 128, kernel_size=(2, 2), stride=(2, 2))
+    (conv7_1): Conv2d(256, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (conv7_2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (upv8): ConvTranspose2d(128, 64, kernel_size=(2, 2), stride=(2, 2))
+    (conv8_1): Conv2d(128, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (conv8_2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (upv9): ConvTranspose2d(64, 32, kernel_size=(2, 2), stride=(2, 2))
+    (conv9_1): Conv2d(64, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (conv9_2): Conv2d(32, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (conv10_1): Conv2d(32, 3, kernel_size=(1, 1), stride=(1, 1))
+  )
+)
+2021-11-17 22:24:14,574 INFO: Total number of parameters: 7760163
+2021-11-17 22:24:14,574 INFO: ----------------------------------------------
+2021-11-17 22:28:01,643 INFO: Namespace(batch_size=32, data_augmentation=True, data_dir='/home/SENSETIME/yangmingzhuo/Documents/ECCV', gpus=1, lr=0.0002, lr_min=1e-06, model_type='DGNet', nEpochs=100, patch_size=128, resume=False, save_folder='./checkpoint/', seed=123, start_iter=1, test_batch_size=1, threads=4, trained_model='./trained_model/')
+2021-11-17 22:28:01,643 INFO: ===>Loading datasets
+2021-11-17 22:28:01,643 INFO: ===> Building model DGNet
+2021-11-17 22:28:01,696 INFO: ---------- Networks architecture -------------
+2021-11-17 22:28:01,696 INFO: DataParallel(
+  (module): ELD_UNet(
+    (conv1_1): Conv2d(3, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (conv1_2): Conv2d(32, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (pool1): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+    (conv2_1): Conv2d(32, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (conv2_2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (pool2): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+    (conv3_1): Conv2d(64, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (conv3_2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (pool3): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+    (conv4_1): Conv2d(128, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (conv4_2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (pool4): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+    (conv5_1): Conv2d(256, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (conv5_2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (upv6): ConvTranspose2d(512, 256, kernel_size=(2, 2), stride=(2, 2))
+    (conv6_1): Conv2d(512, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (conv6_2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (upv7): ConvTranspose2d(256, 128, kernel_size=(2, 2), stride=(2, 2))
+    (conv7_1): Conv2d(256, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (conv7_2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (upv8): ConvTranspose2d(128, 64, kernel_size=(2, 2), stride=(2, 2))
+    (conv8_1): Conv2d(128, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (conv8_2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (upv9): ConvTranspose2d(64, 32, kernel_size=(2, 2), stride=(2, 2))
+    (conv9_1): Conv2d(64, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (conv9_2): Conv2d(32, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (conv10_1): Conv2d(32, 3, kernel_size=(1, 1), stride=(1, 1))
+  )
+)
+2021-11-17 22:28:01,697 INFO: Total number of parameters: 7760163
+2021-11-17 22:28:01,697 INFO: ----------------------------------------------
+2021-11-17 22:28:53,247 INFO: Namespace(batch_size=32, data_augmentation=True, data_dir='/home/SENSETIME/yangmingzhuo/Documents/ECCV', gpus=1, lr=0.0002, lr_min=1e-06, model_type='DGNet', nEpochs=100, patch_size=128, resume=False, save_folder='./checkpoint/', seed=123, start_iter=1, test_batch_size=1, threads=4, trained_model='./trained_model/')
+2021-11-17 22:28:53,247 INFO: ===>Loading datasets
+2021-11-17 22:29:03,907 INFO: Namespace(batch_size=32, data_augmentation=True, data_dir='/home/SENSETIME/yangmingzhuo/Documents/ECCV', gpus=1, lr=0.0002, lr_min=1e-06, model_type='DGNet', nEpochs=100, patch_size=128, resume=False, save_folder='./checkpoint/', seed=123, start_iter=1, test_batch_size=1, threads=4, trained_model='./trained_model/')
+2021-11-17 22:29:03,907 INFO: ===>Loading datasets
+2021-11-17 22:29:03,907 INFO: ===> Building model DGNet
+2021-11-17 22:29:03,962 INFO: ---------- Networks architecture -------------
+2021-11-17 22:29:03,962 INFO: DataParallel(
+  (module): ELD_UNet(
+    (conv1_1): Conv2d(3, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (conv1_2): Conv2d(32, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (pool1): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+    (conv2_1): Conv2d(32, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (conv2_2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (pool2): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+    (conv3_1): Conv2d(64, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (conv3_2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (pool3): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+    (conv4_1): Conv2d(128, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (conv4_2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (pool4): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+    (conv5_1): Conv2d(256, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (conv5_2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (upv6): ConvTranspose2d(512, 256, kernel_size=(2, 2), stride=(2, 2))
+    (conv6_1): Conv2d(512, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (conv6_2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (upv7): ConvTranspose2d(256, 128, kernel_size=(2, 2), stride=(2, 2))
+    (conv7_1): Conv2d(256, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (conv7_2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (upv8): ConvTranspose2d(128, 64, kernel_size=(2, 2), stride=(2, 2))
+    (conv8_1): Conv2d(128, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (conv8_2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (upv9): ConvTranspose2d(64, 32, kernel_size=(2, 2), stride=(2, 2))
+    (conv9_1): Conv2d(64, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (conv9_2): Conv2d(32, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    (conv10_1): Conv2d(32, 3, kernel_size=(1, 1), stride=(1, 1))
+  )
+)
+2021-11-17 22:29:03,963 INFO: Total number of parameters: 7760163
+2021-11-17 22:29:03,963 INFO: ----------------------------------------------

@@ -6,6 +6,7 @@ import glob
 import random
 from scipy.io import loadmat
 from tqdm import tqdm
+import cv2
 
 
 def create_dir(path):
@@ -48,12 +49,10 @@ def crop_patch(img, img_size=(512, 512), patch_size=(300, 300), stride=300, rand
 
 
 def prepare_sidd_data(src_files_test, src_files_train, dst_path_test, dst_path_train, patch_size):
+    dst_path_test = os.path.join(dst_path_test, 'sidd_patch_test')
+    dst_path_train = os.path.join(dst_path_train, 'sidd_patch_train')
     create_dir(dst_path_test)
     create_dir(dst_path_train)
-    h5py_name_train = os.path.join(dst_path_train, "sidd_train.h5")
-    h5py_name_test = os.path.join(dst_path_test, "sidd_val.h5")
-    h5f_train = h5py.File(h5py_name_train, 'w')
-    h5f_test = h5py.File(h5py_name_test, 'w')
     count = 0
 
     noisy_data_mat_file = os.path.join(src_files_test[0], 'ValidationNoisyBlocksSrgb.mat')
@@ -68,12 +67,11 @@ def prepare_sidd_data(src_files_test, src_files_train, dst_path_test, dst_path_t
         print('SIDD processing...' + str(count))
         for block_index in range(noisy_data_mat.shape[1]):
             noisy_image = noisy_data_mat[image_index, block_index, :, :, :]
-            noisy_image = np.float32(noisy_image / 255.)
+            noisy_image = np.float32(noisy_image)
             clean_image = clean_data_mat[image_index, block_index, :, :, :]
-            clean_image = np.float32(clean_image / 255.)
-            img = np.concatenate([noisy_image, clean_image], 2)
-            data = img.copy()
-            h5f_test.create_dataset(str(count), shape=(256, 256, 6), data=data)
+            clean_image = np.float32(clean_image)
+            img = np.concatenate([noisy_image, clean_image], 1)
+            cv2.imwrite(os.path.join(dst_path_test, '{}_{}.png'.format(image_index + 1, block_index + 1)), img)
             count += 1
 
     # prepare training data
@@ -94,22 +92,18 @@ def prepare_sidd_data(src_files_test, src_files_train, dst_path_test, dst_path_t
                     [h, w, c] = img.shape
                     patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, False)
                     for num in range(len(patch_list)):
-                        data = patch_list[num].copy()
-                        h5f_train.create_dataset(str(count), shape=(patch_size, patch_size, c), data=data)
+                        noisy_patch = patch_list[num][:, :, 0:3]
+                        clean_patch = patch_list[num][:, :, 0:3]
+                        img = np.concatenate([noisy_patch, clean_patch], 1)
+                        cv2.imwrite(os.path.join(dst_path_train, '{}_{}.png'.format(i + 1, num + 1)), img)
                         count += 1
 
 
-    h5f_train.close()
-    h5f_test.close()
-
-
 def prepare_renoir_data(src_files, dst_path_test, dst_path_train, patch_size):
+    dst_path_test = os.path.join(dst_path_test, 'renoir_patch_test')
+    dst_path_train = os.path.join(dst_path_train, 'renoir_patch_train')
     create_dir(dst_path_test)
     create_dir(dst_path_train)
-    h5py_name_train = os.path.join(dst_path_train, "renoir_train.h5")
-    h5py_name_test = os.path.join(dst_path_test, "renoir_val.h5")
-    h5f_train = h5py.File(h5py_name_train, 'w')
-    h5f_test = h5py.File(h5py_name_test, 'w')
 
     count = 0
     for src_path in src_files:
@@ -135,8 +129,11 @@ def prepare_renoir_data(src_files, dst_path_test, dst_path_train, patch_size):
                     [h, w, c] = img.shape
                     patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, False)
                     for num in range(len(patch_list)):
-                        data = patch_list[num].copy()
-                        h5f_train.create_dataset(str(count), shape=(patch_size, patch_size, c), data=data)
+                        noisy_patch = patch_list[num][:, :, 0:3]
+                        clean_patch = patch_list[num][:, :, 0:3]
+                        img = np.concatenate([noisy_patch, clean_patch], 1)
+                        cv2.imwrite(os.path.join(dst_path_train, '{}_{}.png'.format(i + 1, num + 1)),
+                                    img)
                         count += 1
 
         # prepare testing data
@@ -158,26 +155,28 @@ def prepare_renoir_data(src_files, dst_path_test, dst_path_train, patch_size):
                     [h, w, c] = img.shape
                     patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, False)
                     for num in range(len(patch_list)):
-                        data = patch_list[num].copy()
-                        h5f_test.create_dataset(str(count), shape=(patch_size, patch_size, c), data=data)
+                        noisy_patch = patch_list[num][:, :, 0:3]
+                        clean_patch = patch_list[num][:, :, 0:3]
+                        img = np.concatenate([noisy_patch, clean_patch], 0)
+                        cv2.imwrite(os.path.join(dst_path_train, '{}_{}.png'.format(i + 1, num + 1)),
+                                    img)
                         count += 1
 
-    h5f_train.close()
-    h5f_test.close()
 
 
 def main():
     random.seed(0)
     patch_size = 256
     os.environ["CUDA_VISIBLE_DEVICES"] = "1"
-    src_path_list_1 = ["./test/SIDD/"]
-    src_path_list_2 = ["./train/SIDD/SIDD_Medium_Srgb/Data/"]
-    src_path_list_3 = ["./train/RENOIR/Mi3_Aligned/",
-                     "./train/RENOIR/T3i_Aligned/",
-                     "./train/RENOIR/S90_Aligned/",
+    root_dir = "/mnt/lustre/yangmingzhuo"
+    src_path_list_1 = [os.path.join(root_dir, "test/SIDD/")]
+    src_path_list_2 = [os.path.join(root_dir, "train/SIDD/SIDD_Medium_Srgb/Data/")]
+    src_path_list_3 = [os.path.join(root_dir, "train/RENOIR/Mi3_Aligned/"),
+                     os.path.join(root_dir, "train/RENOIR/T3i_Aligned/"),
+                     os.path.join(root_dir, "train/RENOIR/S90_Aligned/"),
                      ]
-    dst_path_test = "./test"
-    dst_path_train = "./train"
+    dst_path_test = "test"
+    dst_path_train = "train"
 
     create_dir(dst_path_test)
     create_dir(dst_path_train)

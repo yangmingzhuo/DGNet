@@ -8,3 +8,4 @@ tqdm~=4.62.3
 scipy~=1.2.1
 natsort~=8.0.0
 warmup_scheduler==0.3
+tensorboardx~=2.4

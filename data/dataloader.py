@@ -7,31 +7,33 @@ import h5py
 import torch.utils.data as data
 
 
-class Dataset_h5_real(data.Dataset):
+class load_dataset(data.Dataset):
 
     def __init__(self, src_path, patch_size=128, train=True):
 
         self.path = src_path
-        h5f = h5py.File(self.path, 'r')
-        self.keys = list(h5f.keys())
-        if train:
-            random.shuffle(self.keys)
-        h5f.close()
-
+        files = glob.glob(src_path)
+        files.sort()
+        self.noisy_imgs = []
+        self.clean_imgs = []
+        for i in range(len(files)):
+            img = np.array(Image.open(files[i]))
+            noisy, clean = np.split(img, 2, axis=1)
+            self.noisy_imgs.append(noisy)
+            self.clean_imgs.append(clean)
         self.patch_size = patch_size
         self.train = train
 
     def __getitem__(self, index):
-        h5f = h5py.File(self.path, 'r')
-        key = self.keys[index]
-        data = np.array(h5f[key]).reshape(h5f[key].shape)
-        h5f.close()
+        noisy = self.noisy_imgs[index]
+        clean = self.clean_imgs[index]
+        img = np.concatenate([noisy, clean], 2)
 
         if self.train:
-            (H, W, C) = data.shape
+            (H, W, C) = img.shape
             rnd_h = random.randint(0, max(0, H - self.patch_size))
             rnd_w = random.randint(0, max(0, W - self.patch_size))
-            patch = data[rnd_h:rnd_h + self.patch_size, rnd_w:rnd_w + self.patch_size, :]
+            patch = img[rnd_h:rnd_h + self.patch_size, rnd_w:rnd_w + self.patch_size, :]
 
             p = 0.5
             if random.random() > p: #RandomRot90
@@ -41,7 +43,7 @@ class Dataset_h5_real(data.Dataset):
             if random.random() > p: #RandomVerticalFlip
                 patch = patch[::-1, :, :]
         else:
-            patch = data
+            patch = img
 
         patch = np.clip(patch.astype(np.float32)/255.0, 0.0, 1.0)
         noisy = patch[:, :, 0:3]
@@ -53,4 +55,4 @@ class Dataset_h5_real(data.Dataset):
         return noisy, clean
 
     def __len__(self):
-        return len(self.keys)
+        return len(self.noisy_imgs)

@@ -1,7 +1,6 @@
 from __future__ import print_function
 import os
 import time
-import socket
 import pandas as pd
 import argparse
 
@@ -14,9 +13,8 @@ from model.ELD_UNet import ELD_UNet
 from data.dataloader import *
 from utils.util import *
 from warmup_scheduler import GradualWarmupScheduler
+from tensorboardX import SummaryWriter
 
-os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
 
 # Training settings
 parser = argparse.ArgumentParser(description='PyTorch Super Res Example')
@@ -27,25 +25,21 @@ parser.add_argument('--lr', type=float, default=0.0002, help='learning rate. def
 parser.add_argument('--lr_min', type=float, default=0.000001, help='minimum learning rate. default=0.000001')
 parser.add_argument('--data_augmentation', type=bool, default=True, help='if adopt augmentation when training')
 parser.add_argument('--save_folder', default='./checkpoint/', help='Location to save checkpoint models')
-parser.add_argument('--statistics', default='./statistics/', help='Location to save statistics')
+parser.add_argument('--trained_model', default='./trained_model/', help='Location to save trained_model')
 parser.add_argument('--resume', default=False, help='Whether to resume the training')
 parser.add_argument('--seed', type=int, default=123, help='random seed to use. Default=123')
+parser.add_argument('--test_batch_size', type=int, default=1, help='testing batch size, default=1')
 
 # Global settings
 parser.add_argument('--threads', type=int, default=4, help='number of threads for data loader to use')
 parser.add_argument('--gpus', default=1, type=int, help='number of gpus')
-parser.add_argument('--data_dir', type=str, default='./data', help='the dataset dir')
+parser.add_argument('--data_dir', type=str, default='/data', help='the dataset dir')
 parser.add_argument('--model_type', type=str, default='DGNet', help='the name of model')
 parser.add_argument('--patch_size', type=int, default=128, help='Size of cropped HR image')
-
-
 opt = parser.parse_args()
-gpus_list = range(opt.gpus)
-hostname = str(socket.gethostname())
-cudnn.benchmark = True
 
 
-def train(epoch, model, data_loader, optimizer, criterion, logger):
+def train(epoch, model, data_loader, optimizer, criterion, logger, writer):
     epoch_loss = 0
     model.train()
     for iteration, batch in enumerate(data_loader, 0):
@@ -69,7 +63,9 @@ def train(epoch, model, data_loader, optimizer, criterion, logger):
         optimizer.step()
 
         logger.info("===> Epoch[{}]({}/{}): Loss: {:.4f} || Timer: {:.4f} sec.".format(epoch, iteration, len(data_loader), loss.data, (t1 - t0)))
+    avg_loss = epoch_loss / len(data_loader)
     logger.info("===> Epoch {} Complete: Avg. Loss: {:.4f}".format(epoch, epoch_loss / len(data_loader)))
+    writer.add_scalar('Train_loss', avg_loss, epoch)
 
 
 def valid(data_set, model, logger):
@@ -89,7 +85,11 @@ def valid(data_set, model, logger):
 
 
 def main():
-    # random
+    gpus_list = range(opt.gpus)
+    gpus = ','.join([str(i) for i in gpus_list])
+    os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+    os.environ["CUDA_VISIBLE_DEVICES"] = gpus
+    cudnn.benchmark = True
     random.seed(opt.seed)
     np.random.seed(opt.seed)
     torch.manual_seed(opt.seed)
@@ -101,10 +101,10 @@ def main():
     logger.info('===>Loading datasets')
 
     # Load Dataset
-    train_set = Dataset_h5_real(src_path=os.path.join(opt.data_dir, 'train', 'sidd_train.h5'), patch_size=opt.patch_size, train=True)
-    training_data_loader = DataLoader(dataset=train_set, batch_size=opt.batch_size, shuffle=True, num_workers=4, drop_last=True)
-    test_set = Dataset_h5_real(src_path=os.path.join(opt.data_dir, 'test', 'sidd_val.h5'), patch_size=opt.patch_size, train=False)
-    testing_data_loader = DataLoader(dataset=test_set, batch_size=opt.test_batch_size, shuffle=False, num_workers=0, drop_last=True)
+    train_set = load_dataset(src_path=os.path.join(opt.data_dir, 'train', 'sidd_patch_train'), patch_size=opt.patch_size, train=True)
+    train_data_loader = DataLoader(dataset=train_set, batch_size=opt.batch_size, shuffle=False, num_workers=4, drop_last=True)
+    val_set = load_dataset(src_path=os.path.join(opt.data_dir, 'test', 'sidd_patch_test'), patch_size=opt.patch_size, train=False)
+    val_data_loader = DataLoader(dataset=val_set, batch_size=opt.test_batch_size, shuffle=False, num_workers=0, drop_last=True)
 
     # Load Network
     logger.info('===> Building model {}'.format(opt.model_type))
@@ -123,7 +123,7 @@ def main():
     scheduler = GradualWarmupScheduler(optimizer, multiplier=1, total_epoch=warmup_epochs, after_scheduler=scheduler_cosine)
     scheduler.step()
     if opt.resume:
-        path_chk_rest = get_last_path(opt.statistics, '_latest.pth')
+        path_chk_rest = get_last_path(opt.trained_model, '_latest.pth')
         load_checkpoint(model, path_chk_rest)
         start_epoch = load_start_epoch(path_chk_rest) + 1
         load_optim(optimizer, path_chk_rest)
@@ -137,19 +137,18 @@ def main():
 
     # Training
     PSNR = []
+    writer = SummaryWriter(os.path.join(opt.save_folder, 'logs'))
     for epoch in range(start_epoch, opt.nEpochs + 1):
-        train(epoch, model, training_data_loader, optimizer, criterion, logger)
-        psnr = valid(testing_data_loader, model, logger)
+        train(epoch, model, train_data_loader, optimizer, criterion, logger, writer)
+        psnr = valid(val_data_loader, model, logger)
         PSNR.append(psnr)
-        data_frame = pd.DataFrame(
-            data={'epoch': epoch, 'PSNR': PSNR}, index=range(1, epoch+1)
-        )
-        data_frame.to_csv(os.path.join(opt.statistics, 'training_logs.csv'), index_label='index')
+        writer.add_scalar('lr', scheduler.get_lr(), epoch)
+        writer.add_scalar('Validation_PSNR', psnr, epoch)
         scheduler.step()
         torch.save({'epoch': epoch,
                     'state_dict': model.state_dict(),
                     'optimizer': optimizer.state_dict()
-                    }, os.path.join(opt.statistics, "model_latest.pth"))
+                    }, os.path.join(opt.trained_model, "model_latest.pth"))
 
 
 if __name__ == '__main__':
