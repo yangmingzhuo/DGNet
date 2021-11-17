@@ -159,7 +159,7 @@ def prepare_renoir_data(src_files, dst_path_test, dst_path_train, patch_size):
                     patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, False)
                     for num in range(len(patch_list)):
                         data = patch_list[num].copy()
-                        h5f_test.create_dataset(str(count), shape=(patch_size, patch_size, c * 2), data=data)
+                        h5f_test.create_dataset(str(count), shape=(patch_size, patch_size, c), data=data)
                         count += 1
 
     h5f_train.close()

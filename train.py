@@ -4,6 +4,8 @@ import time
 import socket
 import pandas as pd
 import argparse
+
+import torch.cuda.random
 import torch.nn as nn
 import torch.optim as optim
 import torch.backends.cudnn as cudnn
@@ -18,7 +20,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
 
 # Training settings
 parser = argparse.ArgumentParser(description='PyTorch Super Res Example')
-parser.add_argument('--batch_size', type=int, default=8, help='training batch size')
+parser.add_argument('--batch_size', type=int, default=32, help='training batch size')
 parser.add_argument('--nEpochs', type=int, default=100, help='number of epochs to train for')
 parser.add_argument('--start_iter', type=int, default=1, help='starting epoch')
 parser.add_argument('--lr', type=float, default=0.0002, help='learning rate. default=0.0002')
@@ -27,9 +29,6 @@ parser.add_argument('--data_augmentation', type=bool, default=True, help='if ado
 parser.add_argument('--save_folder', default='./checkpoint/', help='Location to save checkpoint models')
 parser.add_argument('--statistics', default='./statistics/', help='Location to save statistics')
 parser.add_argument('--resume', default=False, help='Whether to resume the training')
-
-# Testing settings
-parser.add_argument('--test_batch_size', type=int, default=1, help='testing batch size, default=1')
 parser.add_argument('--seed', type=int, default=123, help='random seed to use. Default=123')
 
 # Global settings
@@ -74,12 +73,11 @@ def train(epoch, model, data_loader, optimizer, criterion, logger):
 
 
 def valid(data_set, model, logger):
-    psnr_test= 0
+    psnr_test = 0
     model.eval()
     for iteration, batch in enumerate(data_set, 0):
         target = batch[1]
         input = batch[0]
-
         input = input.cuda()
         target = target.cuda()
         with torch.no_grad():
@@ -91,6 +89,12 @@ def valid(data_set, model, logger):
 
 
 def main():
+    # random
+    random.seed(opt.seed)
+    np.random.seed(opt.seed)
+    torch.manual_seed(opt.seed)
+    torch.cuda.manual_seed(opt.seed)
+
     # Logger
     logger = get_logger(opt.save_folder, 'DGNet_log')
     logger.info(opt)

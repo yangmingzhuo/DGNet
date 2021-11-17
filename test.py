@@ -5,24 +5,20 @@ import argparse
 from model.ELD_UNet import ELD_UNet
 from tqdm import tqdm
 from scipy.io import loadmat, savemat
+from utils.util import load_checkpoint, mkdir
 import torch
+import cv2
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
 parser = argparse.ArgumentParser()
-parser.add_argument('--pretrained', type=str, default='./statistics/', help="Checkpoints directory,  (default:./checkpoints)")
+parser.add_argument('--pretrained', type=str, default='./statistics', help="Checkpoints directory,  (default:./checkpoints)")
 parser.add_argument('--data_folder', type=str, default='./data/test/SIDD', help='Location to save checkpoint models')
-parser.add_argument('--out_folder', type=str, default='./result', help='Location to save checkpoint models')
+parser.add_argument('--out_folder', type=str, default='./results', help='Location to save checkpoint models')
 parser.add_argument('--model', type=str, default='model_latest.pth', help='Location to save checkpoint models')
 parser.add_argument('--Type', type=str, default='SIDD', help='To choose the testing benchmark dataset, SIDD or Dnd')
 args = parser.parse_args()
 use_gpu = True
-
-print('Loading the Model')
-net = ELD_UNet()
-checkpoint = torch.load(os.path.join(args.pretrained, args.model))
-model = torch.nn.DataParallel(net).cuda()
-model.eval()
 
 def denoise(model, noisy_image):
     with torch.autograd.set_grad_enabled(False):
@@ -42,13 +38,13 @@ def main():
     use_gpu = True
     # load the pretrained model
     print('Loading the Model')
-    # args = parse_benchmark_processing_arguments()
-    checkpoint = torch.load(os.path.join(args.pretrained, args.model))
-    net = ELD_UNet(args.Isreal)
+    net = ELD_UNet()
+    checkpoint = os.path.join(args.pretrained, args.model)
     if use_gpu:
         net = torch.nn.DataParallel(net).cuda()
-        net.load_state_dict(checkpoint)
+        load_checkpoint(net, checkpoint)
     net.eval()
+    mkdir(args.out_folder)
 
     # load SIDD benchmark dataset and information
     noisy_data_mat_file = os.path.join(args.data_folder, 'ValidationNoisyBlocksSrgb.mat')
@@ -66,7 +62,7 @@ def main():
             noisy_image = torch.from_numpy(noisy_image.transpose((2, 0, 1))[np.newaxis,])
             img = denoise(net, noisy_image)
             save_file = os.path.join(args.out_folder, '%04d_%02d.png' % (image_index + 1, block_index + 1))
-            save_img(save_file, img_as_ubyte(img))
+            cv2.imwrite(save_file, cv2.cvtColor(img_as_ubyte(img), cv2.COLOR_RGB2BGR))
             poseSmile_cell[image_index, block_index] = img
 
     submit_data = {

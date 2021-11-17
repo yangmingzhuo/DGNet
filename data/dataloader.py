@@ -9,7 +9,7 @@ import torch.utils.data as data
 
 class Dataset_h5_real(data.Dataset):
 
-    def __init__(self, src_path, patch_size=128,  gray=False, train=True):
+    def __init__(self, src_path, patch_size=128, train=True):
 
         self.path = src_path
         h5f = h5py.File(self.path, 'r')
@@ -20,7 +20,6 @@ class Dataset_h5_real(data.Dataset):
 
         self.patch_size = patch_size
         self.train = train
-        self.gray = gray
 
     def __getitem__(self, index):
         h5f = h5py.File(self.path, 'r')
