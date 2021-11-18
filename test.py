@@ -10,16 +10,15 @@ import torch
 import cv2
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--pretrained', type=str, default='./trained_model', help="Checkpoints directory,  (default:./checkpoints)")
-parser.add_argument('--data_folder', type=str, default='./data/test/SIDD', help='Location to save checkpoint models')
-parser.add_argument('--out_folder', type=str, default='./results', help='Location to save checkpoint models')
+parser.add_argument('--pretrained', type=str, default='./logs/', help="Checkpoints directory,  (default:./checkpoints)")
+parser.add_argument('--data_folder', type=str, default='/mnt/lustre/share/yangmingzhuo/processed/SIDD', help='Location to save checkpoint models')
+parser.add_argument('--out_folder', type=str, default='/mnt/lustre/share/yangmingzhuo/test_result/SIDD', help='Location to save checkpoint models')
 parser.add_argument('--model', type=str, default='model_latest.pth', help='Location to save checkpoint models')
 parser.add_argument('--Type', type=str, default='SIDD', help='To choose the testing benchmark dataset, SIDD or Dnd')
-parser.add_argument('--gpus', default=1, type=int, help='number of gpus')
+parser.add_argument('--gpus', default=1, type=str, help='number of gpus')
 opt = parser.parse_args()
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = opt.gpus
-use_gpu = True
 
 
 def denoise(model, noisy_image):
@@ -42,9 +41,11 @@ def main():
     print('Loading the Model')
     net = ELD_UNet()
     checkpoint = os.path.join(opt.pretrained, opt.model)
-    if use_gpu:
+    if torch.cuda.device_count() > 1:
         net = torch.nn.DataParallel(net).cuda()
-        load_checkpoint(net, checkpoint)
+    else:
+        net = net.cuda()
+    load_checkpoint(net, checkpoint)
     net.eval()
     mkdir(opt.out_folder)
 

@@ -12,21 +12,17 @@ class load_dataset(data.Dataset):
     def __init__(self, src_path, patch_size=128, train=True):
 
         self.path = src_path
-        files = glob.glob(src_path)
+        files = glob.glob(src_path + '/*.png')
         files.sort()
-        self.noisy_imgs = []
-        self.clean_imgs = []
-        for i in range(len(files)):
-            img = np.array(Image.open(files[i]))
-            noisy, clean = np.split(img, 2, axis=1)
-            self.noisy_imgs.append(noisy)
-            self.clean_imgs.append(clean)
+        self.img_paths = []
+        for file_name in files:
+            self.img_paths.append(file_name)
         self.patch_size = patch_size
         self.train = train
 
     def __getitem__(self, index):
-        noisy = self.noisy_imgs[index]
-        clean = self.clean_imgs[index]
+        img_array = np.array(Image.open(self.img_paths[index]))
+        noisy, clean = np.split(img_array, 2, axis=1)
         img = np.concatenate([noisy, clean], 2)
 
         if self.train:
@@ -36,11 +32,11 @@ class load_dataset(data.Dataset):
             patch = img[rnd_h:rnd_h + self.patch_size, rnd_w:rnd_w + self.patch_size, :]
 
             p = 0.5
-            if random.random() > p: #RandomRot90
+            if random.random() > p:
                 patch = patch.transpose(1, 0, 2)
-            if random.random() > p: #RandomHorizontalFlip
+            if random.random() > p:
                 patch = patch[:, ::-1, :]
-            if random.random() > p: #RandomVerticalFlip
+            if random.random() > p:
                 patch = patch[::-1, :, :]
         else:
             patch = img
@@ -55,4 +51,4 @@ class load_dataset(data.Dataset):
         return noisy, clean
 
     def __len__(self):
-        return len(self.noisy_imgs)
+        return len(self.img_paths)
