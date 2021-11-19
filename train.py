@@ -55,7 +55,7 @@ def train(epoch, model, data_loader, optimizer, criterion, logger, writer):
 
         prediction = model(input)
 
-        loss = criterion(prediction, target)/(input.size()[0]*2)
+        loss = criterion(prediction, target)
 
         t1 = time.time()
         epoch_loss += loss.data
@@ -119,18 +119,19 @@ def main():
     else:
         model.cuda()
         logger.info("push all model to one gpu")
-    criterion = nn.MSELoss()
+    criterion = nn.L1Loss()
     logger.info('---------- Networks architecture -------------')
     print_network(model, logger)
     logger.info('----------------------------------------------')
 
     # Scheduler
     start_epoch = opt.start_iter
-    optimizer = optim.Adam(model.parameters(), lr=opt.lr, betas=(0.9, 0.999), eps=1e-8, weight_decay=1e-8)
+    optimizer = optim.Adam(model.parameters(), lr=opt.lr, betas=(0.9, 0.999), eps=1e-8)
     warmup_epochs = 3
     scheduler_cosine = optim.lr_scheduler.CosineAnnealingLR(optimizer, 20, eta_min=opt.lr_min)
     scheduler = GradualWarmupScheduler(optimizer, multiplier=1, total_epoch=warmup_epochs, after_scheduler=scheduler_cosine)
     scheduler.step()
+    new_lr = opt.lr
     if opt.resume:
         path_chk_rest = get_last_path(opt.trained_model, '_latest.pth')
         load_checkpoint(model, path_chk_rest)
@@ -148,16 +149,24 @@ def main():
     PSNR = []
     writer = SummaryWriter(os.path.join(log_folder, 'logs'))
     for epoch in range(start_epoch, opt.nEpochs + 1):
+        print("------------------------------------------------------------------")
+        print("Epoch: {} start\tLearningRate {:.6f}".format(epoch, new_lr))
+        t0 = time.time()
         train(epoch, model, train_data_loader, optimizer, criterion, logger, writer)
         psnr = valid(val_data_loader, model, logger)
         PSNR.append(psnr)
-        scheduler.step()
+
         torch.save({'epoch': epoch,
                     'state_dict': model.state_dict(),
-                    'optimizer': optimizer.state_dict()
+                    'o970099 ptimizer': optimizer.state_dict()
                     }, os.path.join(checkpoint_folder, "model_latest.pth"))
-        writer.add_scalar('lr', scheduler.get_lr()[0], epoch)
+        writer.add_scalar('lr', new_lr, epoch)
+        scheduler.step()
         writer.add_scalar('Validation_PSNR', psnr, epoch)
+        t1 = time.time()
+        print("Epoch: {} end\tTime: {:.4f}\tLearningRate {:.6f}".format(epoch, t1 - t0, new_lr))
+        new_lr = scheduler.get_lr()[0]
+        print("------------------------------------------------------------------")
 
 
 if __name__ == '__main__':

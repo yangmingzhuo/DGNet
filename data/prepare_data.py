@@ -63,8 +63,8 @@ def prepare_sidd_data(src_files_test, src_files_train, dst_path_test, dst_path_t
     clean_data_mat = loadmat(clean_data_mat_file)[clean_data_mat_name]
 
     # prepare testing data
+    print('SIDD test data processing...')
     for image_index in tqdm(range(noisy_data_mat.shape[0])):
-        print('SIDD processing...' + str(count))
         for block_index in range(noisy_data_mat.shape[1]):
             noisy_image = noisy_data_mat[image_index, block_index, :, :, :]
             noisy_image = np.float32(noisy_image)
@@ -76,15 +76,15 @@ def prepare_sidd_data(src_files_test, src_files_train, dst_path_test, dst_path_t
 
     # prepare training data
     count = 0
+    print('SIDD train data processing...')
     for src_path in src_files_train:
         file_path = glob.glob(src_path + '*')
-        for scene_num, file_name in enumerate(file_path, 0):
+        for scene_num, file_name in enumerate(tqdm(file_path), 0):
             if 'SIDD' in file_name:
                 gt_imgs = glob.glob(file_name + '/*GT*.PNG')
                 gt_imgs.sort()
                 noisy_imgs = glob.glob(file_name + '/*NOISY*.PNG')
                 noisy_imgs.sort()
-                print('SIDD processing...' + str(count))
 
                 for img_num in range(len(noisy_imgs)):
                     gt = np.array(Image.open(gt_imgs[img_num]))
@@ -94,7 +94,7 @@ def prepare_sidd_data(src_files_test, src_files_train, dst_path_test, dst_path_t
                     patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, False)
                     for patch_num in range(len(patch_list)):
                         noisy_patch = patch_list[patch_num][:, :, 0:3]
-                        clean_patch = patch_list[patch_num][:, :, 0:3]
+                        clean_patch = patch_list[patch_num][:, :, 3:6]
                         img = np.concatenate([noisy_patch, clean_patch], 1)
                         cv2.imwrite(os.path.join(dst_path_train, 'scene_{}_img_{}_patch_{}.png'.format(scene_num + 1, img_num + 1, patch_num + 1)), img)
                         count += 1
@@ -112,13 +112,13 @@ def prepare_renoir_data(src_files, dst_path_test, dst_path_train, patch_size):
         file_path_test, file_path_train = split(file_path)
 
         # prepare training data
-        for scene_num, file_name in enumerate(file_path_train, 0):
+        print('RENOIR train data processing...')
+        for scene_num, file_name in enumerate(tqdm(file_path_train), 0):
             if 'RENOIR' in file_name:
                 ref_imgs = glob.glob(file_name + '/*Reference.bmp')
                 full_imgs = glob.glob(file_name + '/*full.bmp')
                 noisy_imgs = glob.glob(file_name + '/*Noisy.bmp')
                 noisy_imgs.sort()
-                print('RENOIR processing...' + str(count) + file_name)
                 ref = np.array(Image.open(ref_imgs[0])).astype(np.float32)
                 full = np.array(Image.open(full_imgs[0])).astype(np.float32)
                 gt = (ref + full) / 2
@@ -130,21 +130,21 @@ def prepare_renoir_data(src_files, dst_path_test, dst_path_train, patch_size):
                     patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, False)
                     for patch_num in range(len(patch_list)):
                         noisy_patch = patch_list[patch_num][:, :, 0:3]
-                        clean_patch = patch_list[patch_num][:, :, 0:3]
+                        clean_patch = patch_list[patch_num][:, :, 3:6]
                         img = np.concatenate([noisy_patch, clean_patch], 1)
                         cv2.imwrite(os.path.join(dst_path_train, 'scene_{}_img_{}_patch_{}.png'.format(scene_num + 1, img_num + 1, patch_num + 1)),
                                     img)
                         count += 1
 
         # prepare testing data
-        for scene_num, file_name in enumerate(file_path_test, 0):
+        print('RENOIR test data processing...')
+        for scene_num, file_name in enumerate(tqdm(file_path_test), 0):
             if 'RENOIR' in file_name:
                 ref_imgs = glob.glob(file_name + '/*Reference.bmp')
                 full_imgs = glob.glob(file_name + '/*full.bmp')
                 noisy_imgs = glob.glob(file_name + '/*Noisy.bmp')
                 noisy_imgs.sort()
 
-                print('RENOIR processing...' + str(count) + file_name)
                 ref = np.array(Image.open(ref_imgs[0])).astype(np.float32)
                 full = np.array(Image.open(full_imgs[0])).astype(np.float32)
                 gt = (ref + full) / 2
@@ -156,9 +156,9 @@ def prepare_renoir_data(src_files, dst_path_test, dst_path_train, patch_size):
                     patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, False)
                     for patch_num in range(len(patch_list)):
                         noisy_patch = patch_list[patch_num][:, :, 0:3]
-                        clean_patch = patch_list[patch_num][:, :, 0:3]
+                        clean_patch = patch_list[patch_num][:, :, 3:6]
                         img = np.concatenate([noisy_patch, clean_patch], 1)
-                        cv2.imwrite(os.path.join(dst_path_train, 'scene_{}_img_{}_patch_{}.png'.format(scene_num + 1, img_num + 1, patch_num + 1)), img)
+                        cv2.imwrite(os.path.join(dst_path_test, 'scene_{}_img_{}_patch_{}.png'.format(scene_num + 1, img_num + 1, patch_num + 1)), img)
                         count += 1
 
 
@@ -167,16 +167,17 @@ def main():
     random.seed(0)
     patch_size = 256
     os.environ["CUDA_VISIBLE_DEVICES"] = "1"
-    root_dir = "/mnt/lustre/yangmingzhuo/dataset/"
+    root_dir = "/mnt/lustre/share/yangmingzhuo/dataset/"
     src_path_list_1 = [os.path.join(root_dir, "test/SIDD/")]
     src_path_list_2 = [os.path.join(root_dir, "train/SIDD/SIDD_Medium_Srgb/Data/")]
     src_path_list_3 = [os.path.join(root_dir, "train/RENOIR/Mi3_Aligned/"),
                      os.path.join(root_dir, "train/RENOIR/T3i_Aligned/"),
                      os.path.join(root_dir, "train/RENOIR/S90_Aligned/"),
                      ]
-    dst_path_test = "/mnt/lustre/yangmingzhuo/processed/test"
-    dst_path_train = "/mnt/lustre/yangmingzhuo/processed/train"
-
+    dst_dir = "/mnt/lustre/share/yangmingzhuo/processed"
+    make_dir(dst_dir)
+    dst_path_test = os.path.join(dst_dir, "test")
+    dst_path_train = os.path.join(dst_dir, "train")
     make_dir(dst_path_test)
     make_dir(dst_path_train)
     print("start...")
