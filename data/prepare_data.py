@@ -23,8 +23,8 @@ def split(full_list, shuffle=False, ratio=0.2):
         random.shuffle(full_list)
     sublist_test = full_list[:offset]
     sublist_train = full_list[offset:]
-    print("testing set: ", len(sublist_test), sublist_test)
-    print("training set: ", len(sublist_train), sublist_train)
+    # print("testing set: ", len(sublist_test), sublist_test)
+    # print("training set: ", len(sublist_train), sublist_train)
     return sublist_test, sublist_train
 
 
@@ -71,7 +71,7 @@ def prepare_sidd_data(src_files_test, src_files_train, dst_path_test, dst_path_t
             clean_image = clean_data_mat[image_index, block_index, :, :, :]
             clean_image = np.float32(clean_image)
             img = np.concatenate([noisy_image, clean_image], 1)
-            cv2.imwrite(os.path.join(dst_path_test, 'scene_{}_patch_{}.png'.format(image_index + 1, block_index + 1)), img)
+            cv2.imwrite(os.path.join(dst_path_test, 'scene_{:03d}_patch_{:03d}.png'.format(image_index + 1, block_index + 1)), img)
             count += 1
 
     # prepare training data
@@ -96,7 +96,7 @@ def prepare_sidd_data(src_files_test, src_files_train, dst_path_test, dst_path_t
                         noisy_patch = patch_list[patch_num][:, :, 0:3]
                         clean_patch = patch_list[patch_num][:, :, 3:6]
                         img = np.concatenate([noisy_patch, clean_patch], 1)
-                        cv2.imwrite(os.path.join(dst_path_train, 'scene_{}_img_{}_patch_{}.png'.format(scene_num + 1, img_num + 1, patch_num + 1)), img)
+                        cv2.imwrite(os.path.join(dst_path_train, 'scene_{:03d}_img_{:03d}_patch_{:03d}.png'.format(scene_num + 1, img_num + 1, patch_num + 1)), img)
                         count += 1
 
 
@@ -132,7 +132,7 @@ def prepare_renoir_data(src_files, dst_path_test, dst_path_train, patch_size):
                         noisy_patch = patch_list[patch_num][:, :, 0:3]
                         clean_patch = patch_list[patch_num][:, :, 3:6]
                         img = np.concatenate([noisy_patch, clean_patch], 1)
-                        cv2.imwrite(os.path.join(dst_path_train, 'scene_{}_img_{}_patch_{}.png'.format(scene_num + 1, img_num + 1, patch_num + 1)),
+                        cv2.imwrite(os.path.join(dst_path_train, 'scene_{:03d}_img_{:03d}_patch_{:03d}.png'.format(scene_num + 1, img_num + 1, patch_num + 1)),
                                     img)
                         count += 1
 
@@ -158,7 +158,7 @@ def prepare_renoir_data(src_files, dst_path_test, dst_path_train, patch_size):
                         noisy_patch = patch_list[patch_num][:, :, 0:3]
                         clean_patch = patch_list[patch_num][:, :, 3:6]
                         img = np.concatenate([noisy_patch, clean_patch], 1)
-                        cv2.imwrite(os.path.join(dst_path_test, 'scene_{}_img_{}_patch_{}.png'.format(scene_num + 1, img_num + 1, patch_num + 1)), img)
+                        cv2.imwrite(os.path.join(dst_path_test, 'scene_{:03d}_img_{:03d}_patch_{:03d}.png'.format(scene_num + 1, img_num + 1, patch_num + 1)), img)
                         count += 1
 
 

@@ -12,23 +12,19 @@ from skimage.metrics import peak_signal_noise_ratio as compare_psnr
 def mkdir(path):
     if not os.path.exists(path):
         os.makedirs(path)
+    return path
 
 
 def get_logger(save_path, logger_name):
     logger = logging.getLogger(logger_name)
     file_formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
     console_formatter = logging.Formatter('%(message)s')
-    # file log
     file_handler = logging.FileHandler(os.path.join(save_path, "experiment.log"))
     file_handler.setFormatter(file_formatter)
-
-    # console log
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setFormatter(console_formatter)
-
     logger.addHandler(file_handler)
     logger.addHandler(console_handler)
-
     logger.setLevel(logging.INFO)
     return logger
 
@@ -77,3 +73,23 @@ def load_checkpoint(model, weights):
             name = k[7:] # remove `module.`
             new_state_dict[name] = v
         model.load_state_dict(new_state_dict)
+
+
+class AverageMeter(object):
+    def __init__(self):
+        self.val = 0
+        self.avg = 0
+        self.sum = 0
+        self.count = 0
+
+    def reset(self):
+        self.val = 0
+        self.avg = 0
+        self.sum = 0
+        self.count = 0
+
+    def update(self, val, n=1):
+        self.val = val
+        self.sum += val * n
+        self.count += n
+        self.avg = self.sum / self.count
