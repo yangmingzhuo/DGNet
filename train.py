@@ -1,12 +1,14 @@
 from __future__ import print_function
+
 import os
 import time
 import argparse
-
+import shutil
 import torch.cuda.random
 import torch.nn as nn
 import torch.optim as optim
 import torch.backends.cudnn as cudnn
+
 from torch.utils.data import DataLoader
 from model.ELD_UNet import ELD_UNet
 from data.dataloader import *
@@ -20,10 +22,8 @@ parser = argparse.ArgumentParser(description='PyTorch Super Res Example')
 parser.add_argument('--batch_size', type=int, default=32, help='training batch size')
 parser.add_argument('--patch_size', type=int, default=128, help='Size of cropped HR image')
 parser.add_argument('--nEpochs', type=int, default=100, help='number of epochs to train for')
-parser.add_argument('--start_iter', type=int, default=1, help='starting epoch')
 parser.add_argument('--lr', type=float, default=0.0002, help='learning rate. default=0.0002')
 parser.add_argument('--lr_min', type=float, default=0.000001, help='minimum learning rate. default=0.000001')
-parser.add_argument('--resume', default=False, help='Whether to resume the training')
 parser.add_argument('--test_batch_size', type=int, default=32, help='testing batch size, default=1')
 parser.add_argument('--data_set', type=str, default='sidd', help='the exact dataset we want to train on')
 
@@ -34,12 +34,14 @@ parser.add_argument('--data_dir', type=str, default='/mnt/lustre/share/yangmingz
 parser.add_argument('--log_dir', default='./logs/', help='Location to save checkpoint models')
 parser.add_argument('--model_type', type=str, default='ELU_UNet', help='the name of model')
 parser.add_argument('--seed', type=int, default=0, help='random seed to use. Default=0')
+parser.add_argument('--resume', default=False, help='Whether to resume the training')
+parser.add_argument('--start_iter', type=int, default=1, help='starting epoch')
 opt = parser.parse_args()
 
 
 def train(epoch, model, data_loader, optimizer, scheduler, criterion, logger, writer):
-    print("------------------------------------------------------------------")
-    print("==> Epoch[{}]: train start LearningRate {:.6f}".format(epoch, scheduler.get_lr()[0]))
+    logger.info('------------------------------------------------------------------')
+    logger.info('==> Epoch[{}]: train start LearningRate {:.6f}'.format(epoch, scheduler.get_lr()[0]))
     t0 = time.time()
     epoch_loss = AverageMeter()
     model.train()
@@ -52,14 +54,14 @@ def train(epoch, model, data_loader, optimizer, scheduler, criterion, logger, wr
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        logger.info("Epoch[{}]({:04d}/{:04d}): Loss: {:.4f}".format(epoch, iteration, len(data_loader), loss.data))
+        logger.info('Epoch[{}]({:04d}/{:04d}): Loss: {:.4f}'.format(epoch, iteration, len(data_loader), loss.data))
     writer.add_scalar('Train Loss', epoch_loss.avg, epoch)
-    logger.info("Avg. Loss: {:.4f} Time: {:.4f} LearningRate {:.6f}".format(epoch_loss.avg, time.time() - t0, scheduler.get_lr()[0]))
-    logger.info("==> Epoch[{}]: train end".format(epoch))
+    logger.info('Avg. Loss: {:.4f} Time: {:.4f} LearningRate {:.6f}'.format(epoch_loss.avg, time.time() - t0, scheduler.get_lr()[0]))
+    logger.info('==> Epoch[{}]: train end'.format(epoch))
 
 
 def valid(epoch, data_loader, model, logger, writer):
-    logger.info("==> Epoch[{}]: validation start".format(epoch))
+    logger.info('==> Epoch[{}]: validation start'.format(epoch))
     t0 = time.time()
     model.eval()
     psnr_val = AverageMeter()
@@ -70,8 +72,8 @@ def valid(epoch, data_loader, model, logger, writer):
             prediction = model(noisy)
             prediction = torch.clamp(prediction, 0., 1.)
         psnr_val.update(batch_PSNR(prediction, target, 1.), 1)
-    logger.info("Avg. PSNR: {:.4f} dB Time: {:.4f}".format(psnr_val.avg, time.time() - t0))
-    logger.info("==> Epoch[{}]: validation end".format(epoch))
+    logger.info('Avg. PSNR: {:.4f} dB Time: {:.4f}'.format(psnr_val.avg, time.time() - t0))
+    logger.info('==> Epoch[{}]: validation end'.format(epoch))
     writer.add_scalar('Validation PSNR', psnr_val.avg, epoch)
     return psnr_val.avg
 
@@ -86,11 +88,11 @@ def main():
     torch.cuda.manual_seed(opt.seed)
 
     # Log setting
-    if os.path.exists(opt.log_dir):
-        os.rmdir(opt.log_dir)
     mkdir(opt.log_dir)
-    log_folder_name = "model_{}_ds_{}_bs_{}_ps_{}_ep_{}_lr_{}".format(opt.model_type, opt.data_set, opt.batch_size, opt.patch_size, opt.nEpochs, opt.lr)
-    log_folder = mkdir(os.path.join(opt.log_dir, log_folder_name))
+    log_folder = os.path.join(opt.log_dir, "model_{}_ds_{}_bs_{}_ps_{}_ep_{}_lr_{}".format(opt.model_type, opt.data_set, opt.batch_size, opt.patch_size, opt.nEpochs, opt.lr))
+    if os.path.exists(log_folder):
+        shutil.rmtree(log_folder)
+    log_folder = mkdir(log_folder)
     checkpoint_folder = mkdir(os.path.join(log_folder, 'checkpoint'))
     writer = SummaryWriter(log_folder)
     logger = get_logger(log_folder, 'DGNet_log')
@@ -131,7 +133,7 @@ def main():
     # resume
 
     if opt.resume:
-        path_chk_rest = get_last_path(opt.trained_model, '_latest.pth')
+        path_chk_rest = get_last_path(checkpoint_folder, '_latest.pth')
         load_checkpoint(model, path_chk_rest)
         start_epoch = load_start_epoch(path_chk_rest) + 1
         load_optim(optimizer, path_chk_rest)
@@ -139,10 +141,10 @@ def main():
         for i in range(1, start_epoch):
             scheduler.step()
         new_lr = scheduler.get_lr()[0]
-        logger.info("==> Resume start epoch: {} Learning rate:{:.6f}".format(start_epoch, scheduler.get_lr()[0]))
+        logger.info('==> Resume start epoch: {} Learning rate:{:.6f}'.format(start_epoch, scheduler.get_lr()[0]))
     else:
         start_epoch = opt.start_iter
-        logger.info("==> Start epoch: {} Learning rate:{:.6f}".format(start_epoch, scheduler.get_lr()[0]))
+        logger.info('==> Start epoch: {} Learning rate:{:.6f}'.format(start_epoch, scheduler.get_lr()[0]))
 
     # Training
     psnr_best = 0
