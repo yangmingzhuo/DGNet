@@ -3,7 +3,6 @@ from PIL import Image
 import numpy as np
 import torch
 import random
-import h5py
 import torch.utils.data as data
 
 

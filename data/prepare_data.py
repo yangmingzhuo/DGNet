@@ -1,17 +1,28 @@
-import h5py
-from PIL import Image
+import argparse
 import os
 import numpy as np
 import glob
 import random
+import cv2
+from PIL import Image
 from scipy.io import loadmat
 from tqdm import tqdm
-import cv2
+
+
+parser = argparse.ArgumentParser(description='PyTorch Super Res Example')
+parser.add_argument('--patch_size', type=int, default=256, help='Size of cropped HR image')
+parser.add_argument('--data_set_dir', type=str, default='/mnt/lustre/share/yangmingzhuo/dataset/', help='the dataset dir')
+parser.add_argument('--dst_dir', type=str, default='/mnt/lustre/share/yangmingzhuo/processed', help='the destination dir')
+parser.add_argument('--seed', type=int, default=0, help='random seed to use. Default=0')
+parser.add_argument('--random', type=bool, default=False, help='whether to random crop images')
+parser.add_argument('--crop_num', type=int, default=300, help='random crop images')
+opt = parser.parse_args()
 
 
 def make_dir(path):
     if not os.path.exists(path):
         os.makedirs(path)
+    return path
 
 
 def split(full_list, shuffle=False, ratio=0.2):
@@ -23,16 +34,13 @@ def split(full_list, shuffle=False, ratio=0.2):
         random.shuffle(full_list)
     sublist_test = full_list[:offset]
     sublist_train = full_list[offset:]
-    # print("testing set: ", len(sublist_test), sublist_test)
-    # print("training set: ", len(sublist_train), sublist_train)
     return sublist_test, sublist_train
 
 
-def crop_patch(img, img_size=(512, 512), patch_size=(300, 300), stride=300, random_crop=False):
+def crop_patch(img, img_size=(512, 512), patch_size=(300, 300), stride=300, random_crop=False, crop_num = 100):
     count = 0
     patch_list = []
     if random_crop:
-        crop_num = 100
         pos = [(np.random.randint(0, img_size[0] - patch_size),
                 np.random.randint(0, img_size[1] - patch_size))
                for i in range(crop_num)]
@@ -91,7 +99,7 @@ def prepare_sidd_data(src_files_test, src_files_train, dst_path_test, dst_path_t
                     noisy = np.array(Image.open(noisy_imgs[img_num]))
                     img = np.concatenate([noisy, gt], 2)
                     [h, w, c] = img.shape
-                    patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, False)
+                    patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, opt.random)
                     for patch_num in range(len(patch_list)):
                         noisy_patch = patch_list[patch_num][:, :, 0:3]
                         clean_patch = patch_list[patch_num][:, :, 3:6]
@@ -127,7 +135,7 @@ def prepare_renoir_data(src_files, dst_path_test, dst_path_train, patch_size):
                     noisy = np.array(Image.open(noisy_imgs[img_num]))
                     img = np.concatenate([noisy, gt], 2)
                     [h, w, c] = img.shape
-                    patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, False)
+                    patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, opt.random)
                     for patch_num in range(len(patch_list)):
                         noisy_patch = patch_list[patch_num][:, :, 0:3]
                         clean_patch = patch_list[patch_num][:, :, 3:6]
@@ -153,7 +161,7 @@ def prepare_renoir_data(src_files, dst_path_test, dst_path_train, patch_size):
                     noisy = np.array(Image.open(noisy_imgs[img_num]))
                     img = np.concatenate([noisy, gt], 2)
                     [h, w, c] = img.shape
-                    patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, False)
+                    patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, opt.random)
                     for patch_num in range(len(patch_list)):
                         noisy_patch = patch_list[patch_num][:, :, 0:3]
                         clean_patch = patch_list[patch_num][:, :, 3:6]
@@ -164,28 +172,25 @@ def prepare_renoir_data(src_files, dst_path_test, dst_path_train, patch_size):
 
 
 def main():
-    random.seed(0)
-    patch_size = 256
-    os.environ["CUDA_VISIBLE_DEVICES"] = "1"
-    root_dir = "/mnt/lustre/share/yangmingzhuo/dataset/"
-    src_path_list_1 = [os.path.join(root_dir, "test/SIDD/")]
-    src_path_list_2 = [os.path.join(root_dir, "train/SIDD/SIDD_Medium_Srgb/Data/")]
-    src_path_list_3 = [os.path.join(root_dir, "train/RENOIR/Mi3_Aligned/"),
+    random.seed(opt.seed)
+    np.random.seed(opt.seed)
+    patch_size = opt.patch_sizee
+    root_dir = opt.data_set_dir
+    sidd_src_path_list_test = [os.path.join(root_dir, "test/SIDD/")]
+    sidd_src_path_list_train = [os.path.join(root_dir, "train/SIDD/SIDD_Medium_Srgb/Data/")]
+    renoir_src_path_list = [os.path.join(root_dir, "train/RENOIR/Mi3_Aligned/"),
                      os.path.join(root_dir, "train/RENOIR/T3i_Aligned/"),
                      os.path.join(root_dir, "train/RENOIR/S90_Aligned/"),
                      ]
-    dst_dir = "/mnt/lustre/share/yangmingzhuo/processed"
-    make_dir(dst_dir)
-    dst_path_test = os.path.join(dst_dir, "test")
-    dst_path_train = os.path.join(dst_dir, "train")
-    make_dir(dst_path_test)
-    make_dir(dst_path_train)
+    dst_dir = make_dir(opt.dst_dir)
+    dst_path_test = make_dir(os.path.join(dst_dir, "test"))
+    dst_path_train = make_dir(os.path.join(dst_dir, "train"))
     print("start...")
     print("start...SIDD...")
-    prepare_sidd_data(src_path_list_1, src_path_list_2, dst_path_test, dst_path_train, patch_size)
+    prepare_sidd_data(sidd_src_path_list_train, sidd_src_path_list_test, dst_path_test, dst_path_train, patch_size)
     print("end...SIDD")
     print("start...RENOIR...")
-    prepare_renoir_data(src_path_list_3, dst_path_test, dst_path_train, patch_size)
+    prepare_renoir_data(renoir_src_path_list, dst_path_test, dst_path_train, patch_size)
     print("end...RENOIR")
     print('end')
 

@@ -1,12 +1,10 @@
 import os
 import sys
 import logging
-import numpy as np
 import torch
 import glob
 from natsort import natsorted
 from collections import OrderedDict
-from skimage.measure import compare_psnr, compare_ssim
 
 
 def mkdir(path):

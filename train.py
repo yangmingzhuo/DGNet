@@ -10,11 +10,12 @@ import torch.optim as optim
 import torch.backends.cudnn as cudnn
 
 from torch.utils.data import DataLoader
+from warmup_scheduler import GradualWarmupScheduler
+from tensorboardX import SummaryWriter
+from skimage.measure import compare_ssim, compare_psnr
 from model.ELD_UNet import ELD_UNet
 from data.dataloader import *
 from utils.util import *
-from warmup_scheduler import GradualWarmupScheduler
-from tensorboardX import SummaryWriter
 
 
 # Training settings
@@ -81,12 +82,12 @@ def valid(epoch, data_loader, model, logger, writer):
         target = target.data.cpu().numpy().astype(np.float32)
         for i in range(prediction.shape[0]):
             psnr_val.update(compare_psnr(prediction[i, :, :, :], target[i, :, :, :], data_range=1.), 1)
-            ssim_val.update(compare_ssim(prediction[i, :, :, :], target[i, :, :, :], data_range=1.), 1)
+            ssim_val.update(compare_ssim(np.squeeze(prediction[i, :, :, :]), np.squeeze(target[i, :, :, :]), data_range=1., multichannel=True), 1)
 
-    logger.info('Average PSNR: {:.4f} dB, Average SSIM: {:.4f}, Time: {:.4f}'.format(psnr_val.avg, time.time() - t0))
-    logger.info('==> Epoch[{}]: validation end'.format(epoch))
     writer.add_scalar('Validation PSNR', psnr_val.avg, epoch)
     writer.add_scalar('Validation SSIM', ssim_val.avg, epoch)
+    logger.info('Average PSNR: {:.4f} dB, Average SSIM: {:.4f}, Time: {:.4f}'.format(psnr_val.avg, time.time() - t0))
+    logger.info('==> Epoch[{}]: validation end'.format(epoch))
     return psnr_val.avg
 
 
@@ -164,16 +165,10 @@ def main():
         writer.add_scalar('Learning rate', scheduler.get_lr()[0], epoch)
         train(epoch, model, train_data_loader, optimizer, scheduler, criterion, logger, writer)
         psnr = valid(epoch, val_data_loader, model, logger, writer)
-        torch.save({'epoch': epoch,
-                    'state_dict': model.state_dict(),
-                    'ptimizer': optimizer.state_dict()
-                    }, os.path.join(checkpoint_folder, "model_latest.pth"))
+        torch.save({'epoch': epoch, 'state_dict': model.state_dict(), 'ptimizer': optimizer.state_dict()}, os.path.join(checkpoint_folder, "model_latest.pth"))
         if psnr > psnr_best:
             psnr_best = psnr
-            torch.save({'epoch': epoch,
-                        'state_dict': model.state_dict(),
-                        'optimizer': optimizer.state_dict()
-                        }, os.path.join(checkpoint_folder, "model_best.pth"))
+            torch.save({'epoch': epoch, 'state_dict': model.state_dict(), 'optimizer': optimizer.state_dict()}, os.path.join(checkpoint_folder, "model_best.pth"))
         scheduler.step()
 
 
