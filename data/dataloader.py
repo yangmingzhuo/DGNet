@@ -6,7 +6,7 @@ import random
 import torch.utils.data as data
 
 
-class load_dataset(data.Dataset):
+class Load_Dataset(data.Dataset):
 
     def __init__(self, src_path, patch_size=128, train=True):
 
