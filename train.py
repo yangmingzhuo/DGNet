@@ -1,7 +1,6 @@
 from __future__ import print_function
 import os
 import time
-import pandas as pd
 import argparse
 
 import torch.cuda.random
@@ -43,20 +42,13 @@ def train(epoch, model, data_loader, optimizer, criterion, logger, writer):
     epoch_loss = 0
     model.train()
     for iteration, batch in enumerate(data_loader, 0):
-        target = batch[1]
-        input = batch[0]
-
-        input = input.cuda()
-        target = target.cuda()
-
+        input = batch[0].cuda()
+        target = batch[1].cuda()
         model.zero_grad()
         optimizer.zero_grad()
         t0 = time.time()
-
         prediction = model(input)
-
         loss = criterion(prediction, target)
-
         t1 = time.time()
         epoch_loss += loss.data
         loss.backward()
@@ -146,7 +138,6 @@ def main():
         logger.info('--------------------------------------------------------------------------')
 
     # Training
-    PSNR = []
     writer = SummaryWriter(os.path.join(log_folder, 'logs'))
     for epoch in range(start_epoch, opt.nEpochs + 1):
         print("------------------------------------------------------------------")
@@ -154,7 +145,6 @@ def main():
         t0 = time.time()
         train(epoch, model, train_data_loader, optimizer, criterion, logger, writer)
         psnr = valid(val_data_loader, model, logger)
-        PSNR.append(psnr)
 
         torch.save({'epoch': epoch,
                     'state_dict': model.state_dict(),
