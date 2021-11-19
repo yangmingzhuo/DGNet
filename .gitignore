@@ -7,4 +7,4 @@
 /data/test/val.h5
 /checkpoint
 data/prepare.sh
-run.sh
+train.sh
