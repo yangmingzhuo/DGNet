@@ -7,4 +7,4 @@
 /data/test/val.h5
 /checkpoint
 data/prepare.sh
-train.sh
+train_sidd.sh
