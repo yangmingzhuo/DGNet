@@ -110,7 +110,7 @@ def main():
     logger = get_logger(log_folder, 'DGNet_log')
 
     # Load Dataset
-    logger.info('==> Loading datasets {} Batch Size: {} Patch Size: {}'.format(opt.data_set, opt.batch_size, opt.patch_size))
+    logger.info('==> Loading datasets {}, Batch Size: {}, Patch Size: {}'.format(opt.data_set, opt.batch_size, opt.patch_size))
     train_set = load_dataset(src_path=os.path.join(opt.data_dir, 'train', opt.data_set + '_patch_train'), patch_size=opt.patch_size, train=True)
     train_data_loader = DataLoader(dataset=train_set, batch_size=opt.batch_size, shuffle=True, num_workers=4, drop_last=True)
     val_set = load_dataset(src_path=os.path.join(opt.data_dir, 'test', opt.data_set + '_patch_test'), patch_size=opt.patch_size, train=False)

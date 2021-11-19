@@ -8,6 +8,10 @@ Excel
 https://docs.qq.com/sheet/DRUtMT0ZhYm5KZFd5
 
 ## Train
-1. Download SIDD and Renoir data to ./Dataset/train and run prepare_train.py
+1. Download SIDD and Renoir training data and run prepare_train.py
 
-    ``python3 ./Dataset/train/prepare_train.py``
+    ``python3 ./data/prepare_train.py``
+
+2. train the model
+
+   ``python3 ./prepare.py``
