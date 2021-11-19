@@ -6,7 +6,7 @@ import torch
 import glob
 from natsort import natsorted
 from collections import OrderedDict
-from skimage.metrics import peak_signal_noise_ratio as compare_psnr
+from skimage.measure import compare_psnr, compare_ssim
 
 
 def mkdir(path):
@@ -17,25 +17,22 @@ def mkdir(path):
 
 def get_logger(save_path, logger_name):
     logger = logging.getLogger(logger_name)
-    file_formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
+    file_formatter = logging.Formatter('%(asctime)s: %(message)s')
     console_formatter = logging.Formatter('%(message)s')
+
+    # file log
     file_handler = logging.FileHandler(os.path.join(save_path, "experiment.log"))
     file_handler.setFormatter(file_formatter)
+
+    # console log
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setFormatter(console_formatter)
+
     logger.addHandler(file_handler)
     logger.addHandler(console_handler)
+
     logger.setLevel(logging.INFO)
     return logger
-
-
-def batch_PSNR(img, imclean, data_range):
-    Img = img.data.cpu().numpy().astype(np.float32)
-    Iclean = imclean.data.cpu().numpy().astype(np.float32)
-    PSNR = 0
-    for i in range(Img.shape[0]):
-        PSNR += compare_psnr(Iclean[i, :, :, :], Img[i, :, :, :], data_range=data_range)
-    return (PSNR / Img.shape[0])
 
 
 def print_network(net, logger):

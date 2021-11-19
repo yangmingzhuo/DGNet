@@ -48,15 +48,17 @@ def train(epoch, model, data_loader, optimizer, scheduler, criterion, logger, wr
     for iteration, batch in enumerate(data_loader, 0):
         noisy = batch[0].cuda()
         target = batch[1].cuda()
+
         prediction = model(noisy)
         loss = criterion(prediction, target)
         epoch_loss.update(loss.data, 1)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+
         logger.info('Epoch[{}]({:04d}/{:04d}): Loss: {:.4f}'.format(epoch, iteration, len(data_loader), loss.data))
     writer.add_scalar('Train Loss', epoch_loss.avg, epoch)
-    logger.info('Avg. Loss: {:.4f} Time: {:.4f} LearningRate {:.6f}'.format(epoch_loss.avg, time.time() - t0, scheduler.get_lr()[0]))
+    logger.info('Avg. Loss: {:.4f}, Time: {:.4f}, LearningRate {:.6f}'.format(epoch_loss.avg, time.time() - t0, scheduler.get_lr()[0]))
     logger.info('==> Epoch[{}]: train end'.format(epoch))
 
 
@@ -65,16 +67,26 @@ def valid(epoch, data_loader, model, logger, writer):
     t0 = time.time()
     model.eval()
     psnr_val = AverageMeter()
+    ssim_val = AverageMeter()
+
     for iteration, batch in enumerate(data_loader, 0):
         noisy = batch[0].cuda()
         target = batch[1].cuda()
+
         with torch.no_grad():
             prediction = model(noisy)
             prediction = torch.clamp(prediction, 0., 1.)
-        psnr_val.update(batch_PSNR(prediction, target, 1.), 1)
-    logger.info('Avg. PSNR: {:.4f} dB Time: {:.4f}'.format(psnr_val.avg, time.time() - t0))
+
+        prediction = prediction.data.cpu().numpy().astype(np.float32)
+        target = target.data.cpu().numpy().astype(np.float32)
+        for i in range(prediction.shape[0]):
+            psnr_val.update(compare_psnr(prediction[i, :, :, :], target[i, :, :, :], data_range=1.), 1)
+            ssim_val.update(compare_ssim(prediction[i, :, :, :], target[i, :, :, :], data_range=1.), 1)
+
+    logger.info('Average PSNR: {:.4f} dB, Average SSIM: {:.4f}, Time: {:.4f}'.format(psnr_val.avg, time.time() - t0))
     logger.info('==> Epoch[{}]: validation end'.format(epoch))
     writer.add_scalar('Validation PSNR', psnr_val.avg, epoch)
+    writer.add_scalar('Validation SSIM', ssim_val.avg, epoch)
     return psnr_val.avg
 
 
@@ -124,7 +136,7 @@ def main():
     # Scheduler
     warmup_epochs = 3
     t_max = opt.nEpochs - warmup_epochs + 40
-    logger.info('==> Optimizer: Adam Warmup epochs: {} Learning rate:  Scheduler: CosineAnnealingLR T_max: {}'.format(warmup_epochs, opt.lr, t_max))
+    logger.info('==> Optimizer: Adam Warmup epochs: {}, Learning rate: {}, Scheduler: CosineAnnealingLR, T_max: {}'.format(warmup_epochs, opt.lr, t_max))
     optimizer = optim.Adam(model.parameters(), lr=opt.lr, betas=(0.9, 0.999), eps=1e-8)
     scheduler_cosine = optim.lr_scheduler.CosineAnnealingLR(optimizer, t_max, eta_min=opt.lr_min)
     scheduler = GradualWarmupScheduler(optimizer, multiplier=1, total_epoch=warmup_epochs, after_scheduler=scheduler_cosine)
@@ -141,10 +153,10 @@ def main():
         for i in range(1, start_epoch):
             scheduler.step()
         new_lr = scheduler.get_lr()[0]
-        logger.info('==> Resume start epoch: {} Learning rate:{:.6f}'.format(start_epoch, scheduler.get_lr()[0]))
+        logger.info('==> Resume start epoch: {}, Learning rate:{:.6f}'.format(start_epoch, scheduler.get_lr()[0]))
     else:
         start_epoch = opt.start_iter
-        logger.info('==> Start epoch: {} Learning rate:{:.6f}'.format(start_epoch, scheduler.get_lr()[0]))
+        logger.info('==> Start epoch: {}, Learning rate:{:.6f}'.format(start_epoch, scheduler.get_lr()[0]))
 
     # Training
     psnr_best = 0

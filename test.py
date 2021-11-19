@@ -10,10 +10,10 @@ import torch
 import cv2
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--pretrained', type=str, default='./logs/', help="Checkpoints directory,  (default:./checkpoints)")
+parser.add_argument('--pretrained', type=str, default='./', help="Checkpoints directory,  (default:./checkpoints)")
 parser.add_argument('--data_folder', type=str, default='/mnt/lustre/share/yangmingzhuo/processed/SIDD', help='Location to save checkpoint models')
 parser.add_argument('--out_folder', type=str, default='/mnt/lustre/share/yangmingzhuo/test_result/SIDD', help='Location to save checkpoint models')
-parser.add_argument('--model', type=str, default='model_latest.pth', help='Location to save checkpoint models')
+parser.add_argument('--model', type=str, default='model_best.pth', help='Location to save checkpoint models')
 parser.add_argument('--Type', type=str, default='SIDD', help='To choose the testing benchmark dataset, SIDD or Dnd')
 parser.add_argument('--gpus', default=1, type=str, help='number of gpus')
 opt = parser.parse_args()
