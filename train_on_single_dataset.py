@@ -22,7 +22,7 @@ from utils.util import *
 parser = argparse.ArgumentParser(description='PyTorch Super Res Example')
 parser.add_argument('--batch_size', type=int, default=32, help='training batch size')
 parser.add_argument('--patch_size', type=int, default=128, help='Size of cropped HR image')
-parser.add_argument('--nEpochs', type=int, default=100, help='number of epochs to train for')
+parser.add_argument('--nEpochs', type=int, default=200, help='number of epochs to train for')
 parser.add_argument('--lr', type=float, default=0.0002, help='learning rate. default=0.0002')
 parser.add_argument('--lr_min', type=float, default=0.000001, help='minimum learning rate. default=0.000001')
 parser.add_argument('--test_batch_size', type=int, default=32, help='testing batch size, default=1')
@@ -42,7 +42,7 @@ opt = parser.parse_args()
 
 def train(epoch, model, data_loader, optimizer, scheduler, criterion, logger, writer):
     logger.info('------------------------------------------------------------------')
-    logger.info('==> Epoch[{}]: train start LearningRate {:.6f}'.format(epoch, scheduler.get_lr()[0]))
+    logger.info('Epoch[{}]: Train start LearningRate {:.6f}'.format(epoch, scheduler.get_lr()[0]))
     t0 = time.time()
     epoch_loss = AverageMeter()
     model.train()
@@ -59,12 +59,12 @@ def train(epoch, model, data_loader, optimizer, scheduler, criterion, logger, wr
 
         logger.info('Epoch[{}]({:04d}/{:04d}): Loss: {:.4f}'.format(epoch, iteration, len(data_loader), loss.data))
     writer.add_scalar('Train Loss', epoch_loss.avg, epoch)
-    logger.info('Avg. Loss: {:.4f}, Time: {:.4f}, LearningRate {:.6f}'.format(epoch_loss.avg, time.time() - t0, scheduler.get_lr()[0]))
-    logger.info('==> Epoch[{}]: train end'.format(epoch))
+    logger.info('Epoch[{}]: Train end, Average Loss: {:.4f}, Time: {:.4f}, LearningRate {:.6f}'.format(epoch, epoch_loss.avg, time.time() - t0, scheduler.get_lr()[0]))
+    logger.info('------------------------------------------------------------------')
 
 
 def valid(epoch, data_loader, model, logger, writer):
-    logger.info('==> Epoch[{}]: validation start'.format(epoch))
+    logger.info('Epoch[{}]: Validation start'.format(epoch))
     t0 = time.time()
     model.eval()
     psnr_val = AverageMeter()
@@ -81,13 +81,13 @@ def valid(epoch, data_loader, model, logger, writer):
         prediction = prediction.data.cpu().numpy().astype(np.float32)
         target = target.data.cpu().numpy().astype(np.float32)
         for i in range(prediction.shape[0]):
-            psnr_val.update(compare_psnr(prediction[i, :, :, :], target[i, :, :, :], data_range=1.), 1)
-            ssim_val.update(compare_ssim(np.squeeze(prediction[i, :, :, :]), np.squeeze(target[i, :, :, :]), data_range=1., multichannel=True), 1)
+            psnr_val.update(compare_psnr(prediction[i, :, :, :], target[i, :, :, :], 1), 1)
+            ssim_val.update(compare_ssim(np.transpose(np.squeeze(prediction[i, :, :, :]), (1, 2, 0)), np.transpose(np.squeeze(target[i, :, :, :]), (1, 2, 0)), data_range=1., multichannel=True), 1)
 
     writer.add_scalar('Validation PSNR', psnr_val.avg, epoch)
     writer.add_scalar('Validation SSIM', ssim_val.avg, epoch)
-    logger.info('Average PSNR: {:.4f} dB, Average SSIM: {:.4f}, Time: {:.4f}'.format(psnr_val.avg, time.time() - t0))
-    logger.info('==> Epoch[{}]: validation end'.format(epoch))
+    logger.info('Epoch[{}]: Validation end, Average PSNR: {:.4f} dB, Average SSIM: {:.4f}, Time: {:.4f}'.format(epoch, psnr_val.avg, ssim_val.avg, time.time() - t0))
+    logger.info('------------------------------------------------------------------')
     return psnr_val.avg
 
 
@@ -111,14 +111,14 @@ def main():
     logger = get_logger(log_folder, 'DGNet_log')
 
     # Load Dataset
-    logger.info('==> Loading datasets {}, Batch Size: {}, Patch Size: {}'.format(opt.data_set, opt.batch_size, opt.patch_size))
-    train_set = Load_Dataset(src_path=os.path.join(opt.data_dir, 'train', opt.data_set + '_patch_train'), patch_size=opt.patch_size, train=True)
+    logger.info('Loading datasets {}, Batch Size: {}, Patch Size: {}'.format(opt.data_set, opt.batch_size, opt.patch_size))
+    train_set = LoadDataset(src_path=os.path.join(opt.data_dir, 'train', opt.data_set + '_patch_train'), patch_size=opt.patch_size, train=True)
     train_data_loader = DataLoader(dataset=train_set, batch_size=opt.batch_size, shuffle=True, num_workers=4, drop_last=True)
-    val_set = Load_Dataset(src_path=os.path.join(opt.data_dir, 'test', opt.data_set + '_patch_test'), patch_size=opt.patch_size, train=False)
+    val_set = LoadDataset(src_path=os.path.join(opt.data_dir, 'test', opt.data_set + '_patch_test'), patch_size=opt.patch_size, train=False)
     val_data_loader = DataLoader(dataset=val_set, batch_size=opt.test_batch_size, shuffle=False, num_workers=0, drop_last=True)
 
     # Load Network
-    logger.info('==> Building model {}'.format(opt.model_type))
+    logger.info('Building model {}'.format(opt.model_type))
     model = ELD_UNet()
     if torch.cuda.device_count() > 1:
         model = torch.nn.DataParallel(model)
@@ -137,14 +137,13 @@ def main():
     # Scheduler
     warmup_epochs = 3
     t_max = opt.nEpochs - warmup_epochs + 40
-    logger.info('==> Optimizer: Adam Warmup epochs: {}, Learning rate: {}, Scheduler: CosineAnnealingLR, T_max: {}'.format(warmup_epochs, opt.lr, t_max))
+    logger.info('Optimizer: Adam Warmup epochs: {}, Learning rate: {}, Scheduler: CosineAnnealingLR, T_max: {}'.format(warmup_epochs, opt.lr, t_max))
     optimizer = optim.Adam(model.parameters(), lr=opt.lr, betas=(0.9, 0.999), eps=1e-8)
     scheduler_cosine = optim.lr_scheduler.CosineAnnealingLR(optimizer, t_max, eta_min=opt.lr_min)
     scheduler = GradualWarmupScheduler(optimizer, multiplier=1, total_epoch=warmup_epochs, after_scheduler=scheduler_cosine)
     scheduler.step()
 
     # resume
-
     if opt.resume:
         path_chk_rest = get_last_path(checkpoint_folder, '_latest.pth')
         load_checkpoint(model, path_chk_rest)
@@ -154,15 +153,15 @@ def main():
         for i in range(1, start_epoch):
             scheduler.step()
         new_lr = scheduler.get_lr()[0]
-        logger.info('==> Resume start epoch: {}, Learning rate:{:.6f}'.format(start_epoch, scheduler.get_lr()[0]))
+        logger.info('Resume start epoch: {}, Learning rate:{:.6f}'.format(start_epoch, scheduler.get_lr()[0]))
     else:
         start_epoch = opt.start_iter
-        logger.info('==> Start epoch: {}, Learning rate:{:.6f}'.format(start_epoch, scheduler.get_lr()[0]))
+        logger.info('Start epoch: {}, Learning rate:{:.6f}'.format(start_epoch, scheduler.get_lr()[0]))
 
     # Training
     psnr_best = 0
     for epoch in range(start_epoch, opt.nEpochs + 1):
-        writer.add_scalar('Learning rate', scheduler.get_lr()[0], epoch)
+        writer.add_scalar('Learning Rate', scheduler.get_lr()[0], epoch)
         train(epoch, model, train_data_loader, optimizer, scheduler, criterion, logger, writer)
         psnr = valid(epoch, val_data_loader, model, logger, writer)
         torch.save({'epoch': epoch, 'state_dict': model.state_dict(), 'ptimizer': optimizer.state_dict()}, os.path.join(checkpoint_folder, "model_latest.pth"))
