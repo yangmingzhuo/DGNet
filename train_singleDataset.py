@@ -59,7 +59,7 @@ def valid(epoch, data_loader, model, logger, writer):
         prediction = prediction.data.cpu().numpy().astype(np.float32)
         target = target.data.cpu().numpy().astype(np.float32)
         for i in range(prediction.shape[0]):
-            psnr_val.update(compare_psnr(prediction[i, :, :, :], target[i, :, :, :], 1), 1)
+            psnr_val.update(compare_psnr(prediction[i, :, :, :], target[i, :, :, :], data_range=1.0), 1)
             ssim_val.update(compare_ssim(np.transpose(np.squeeze(prediction[i, :, :, :]), (1, 2, 0)), np.transpose(np.squeeze(target[i, :, :, :]), (1, 2, 0)), data_range=1.0, multichannel=True), 1)
 
     writer.add_scalar('Validation PSNR', psnr_val.avg, epoch)
@@ -90,6 +90,8 @@ def main():
     parser.add_argument('--seed', type=int, default=0, help='random seed to use. Default=0')
     parser.add_argument('--resume', action='store_true', help='Whether to resume the training')
     parser.add_argument('--start_iter', type=int, default=1, help='starting epoch')
+    parser.add_argument('--weight_decay', type=float, default=1e-8, help='weight_decay')
+    parser.add_argument('--num_workers', type=int, default=8, help='number of workers')
     opt = parser.parse_args()
 
     # Initialize
@@ -117,9 +119,9 @@ def main():
         data_process = 'processed'
     logger.info('Loading datasets {}, Batch Size: {}, Patch Size: {}'.format(opt.data_set, opt.batch_size, opt.patch_size))
     train_set = LoadDataset(src_path=os.path.join(opt.data_dir, data_process, 'train', opt.data_set + '_patch_train'), patch_size=opt.patch_size, train=True)
-    train_data_loader = DataLoader(dataset=train_set, batch_size=opt.batch_size, shuffle=True, num_workers=4, drop_last=True)
+    train_data_loader = DataLoader(dataset=train_set, batch_size=opt.batch_size, shuffle=True, num_workers=opt.num_workers, drop_last=True)
     val_set = LoadDataset(src_path=os.path.join(opt.data_dir, data_process, 'test', opt.data_set + '_patch_test'), patch_size=opt.patch_size, train=False)
-    val_data_loader = DataLoader(dataset=val_set, batch_size=opt.test_batch_size, shuffle=False, num_workers=0, drop_last=True)
+    val_data_loader = DataLoader(dataset=val_set, batch_size=opt.test_batch_size, shuffle=False, num_workers=opt.num_workers, drop_last=True)
 
     # Load Network
     logger.info('Building model {}'.format(opt.model_type))
@@ -142,7 +144,7 @@ def main():
     warmup_epochs = 3
     t_max = opt.nEpochs - warmup_epochs + 40
     logger.info('Optimizer: Adam Warmup epochs: {}, Learning rate: {}, Scheduler: CosineAnnealingLR, T_max: {}'.format(warmup_epochs, opt.lr, t_max))
-    optimizer = optim.Adam(model.parameters(), lr=opt.lr, betas=(0.9, 0.999), eps=1e-8)
+    optimizer = optim.Adam(model.parameters(), lr=opt.lr, weight_decay=opt.weight_decay)
     scheduler_cosine = optim.lr_scheduler.CosineAnnealingLR(optimizer, t_max, eta_min=opt.lr_min)
     scheduler = GradualWarmupScheduler(optimizer, multiplier=1, total_epoch=warmup_epochs, after_scheduler=scheduler_cosine)
     scheduler.step()
@@ -170,15 +172,14 @@ def main():
         writer.add_scalar('Learning Rate', scheduler.get_lr()[0], epoch)
         train(epoch, model, train_data_loader, optimizer, scheduler, criterion, logger, writer)
         psnr, ssim = valid(epoch, val_data_loader, model, logger, writer)
-        torch.save({'epoch': epoch, 'state_dict': model.state_dict(), 'ptimizer': optimizer.state_dict()}, os.path.join(checkpoint_folder, "model_latest.pth"))
+        torch.save({'epoch': epoch, 'state_dict': model.state_dict(), 'optimizer': optimizer.state_dict()}, os.path.join(checkpoint_folder, "model_latest.pth"))
         if psnr > psnr_best:
             psnr_best = psnr
             ssim_best = ssim
             epoch_best = epoch
             torch.save({'epoch': epoch, 'state_dict': model.state_dict(), 'optimizer': optimizer.state_dict()}, os.path.join(checkpoint_folder, "model_best.pth"))
         scheduler.step()
-
-    logger.info("best_psnr = {}, best_ssim ={}".format(psnr_best, ssim_best, epoch_best))
+        logger.info('||==> best_epoch = {}, best_psnr = {}, best_ssim ={}'.format(epoch_best, psnr_best, ssim_best))
 
 
 if __name__ == '__main__':
