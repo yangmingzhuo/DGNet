@@ -9,16 +9,6 @@ from scipy.io import loadmat
 from tqdm import tqdm
 
 
-parser = argparse.ArgumentParser(description='PyTorch Super Res Example')
-parser.add_argument('--patch_size', type=int, default=256, help='Size of cropped HR image')
-parser.add_argument('--data_set', type=str, default='sidd', help='the dataset to crop')
-parser.add_argument('--data_set_dir', type=str, default='/mnt/lustre/share/yangmingzhuo/dataset/', help='the dataset dir')
-parser.add_argument('--dst_dir', type=str, default='/mnt/lustre/share/yangmingzhuo/processed', help='the destination dir')
-parser.add_argument('--seed', type=int, default=0, help='random seed to use. Default=0')
-parser.add_argument('--random', type=bool, default=False, help='whether to random crop images')
-opt = parser.parse_args()
-
-
 def make_dir(path):
     if not os.path.exists(path):
         os.makedirs(path)
@@ -54,7 +44,7 @@ def crop_patch(img, img_size=(512, 512), patch_size=(256, 256), stride=256, rand
     return patch_list
 
 
-def prepare_sidd_data(src_files_test, src_files_train, dst_path_test, dst_path_train, patch_size):
+def prepare_sidd_data(src_files_test, src_files_train, dst_path_test, dst_path_train, patch_size, rand):
     dst_path_test = make_dir(os.path.join(dst_path_test, 'sidd_patch_test'))
     dst_path_train = make_dir(os.path.join(dst_path_train, 'sidd_patch_train'))
 
@@ -92,7 +82,7 @@ def prepare_sidd_data(src_files_test, src_files_train, dst_path_test, dst_path_t
                     noisy = np.array(Image.open(noisy_imgs[img_num]))
                     img = np.concatenate([noisy, gt], 2)
                     [h, w, c] = img.shape
-                    patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, opt.random, 300)
+                    patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, rand, 300)
                     for patch_num in range(len(patch_list)):
                         noisy_patch = patch_list[patch_num][:, :, 0:3]
                         clean_patch = patch_list[patch_num][:, :, 3:6]
@@ -100,12 +90,12 @@ def prepare_sidd_data(src_files_test, src_files_train, dst_path_test, dst_path_t
                         cv2.imwrite(os.path.join(dst_path_train, 'scene_{:03d}_img_{:03d}_patch_{:03d}.png'.format(scene_num + 1, img_num + 1, patch_num + 1)), img)
 
 
-def prepare_renoir_data(src_files, dst_path_test, dst_path_train, patch_size):
+def prepare_renoir_data(src_files, dst_path_test, dst_path_train, patch_size, rand):
     dst_path_test = make_dir(os.path.join(dst_path_test, 'renoir_patch_test'))
     dst_path_train = make_dir(os.path.join(dst_path_train, 'renoir_patch_train'))
 
     for src_path in src_files:
-        file_path = glob.glob(src_files + '*')
+        file_path = glob.glob(src_path + '*')
         file_path_test, file_path_train = split(file_path)
 
         # prepare training data
@@ -124,7 +114,7 @@ def prepare_renoir_data(src_files, dst_path_test, dst_path_train, patch_size):
                     noisy = np.array(Image.open(noisy_imgs[img_num]))
                     img = np.concatenate([noisy, gt], 2)
                     [h, w, c] = img.shape
-                    patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, opt.random)
+                    patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, rand, 300)
                     for patch_num in range(len(patch_list)):
                         noisy_patch = patch_list[patch_num][:, :, 0:3]
                         clean_patch = patch_list[patch_num][:, :, 3:6]
@@ -147,7 +137,7 @@ def prepare_renoir_data(src_files, dst_path_test, dst_path_train, patch_size):
                     noisy = np.array(Image.open(noisy_imgs[img_num]))
                     img = np.concatenate([noisy, gt], 2)
                     [h, w, c] = img.shape
-                    patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, opt.random)
+                    patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, rand, 32)
                     for patch_num in range(len(patch_list)):
                         noisy_patch = patch_list[patch_num][:, :, 0:3]
                         clean_patch = patch_list[patch_num][:, :, 3:6]
@@ -155,7 +145,7 @@ def prepare_renoir_data(src_files, dst_path_test, dst_path_train, patch_size):
                         cv2.imwrite(os.path.join(dst_path_test, 'scene_{:03d}_img_{:03d}_patch_{:03d}.png'.format(scene_num + 1, img_num + 1, patch_num + 1)), img)
 
 
-def prepare_polyu_data(src_files, dst_path_test, dst_path_train, patch_size):
+def prepare_polyu_data(src_files, dst_path_test, dst_path_train, patch_size, rand):
     dst_path_test = make_dir(os.path.join(dst_path_test, 'polyu_patch_test'))
     dst_path_train = make_dir(os.path.join(dst_path_train, 'polyu_patch_train'))
 
@@ -168,17 +158,17 @@ def prepare_polyu_data(src_files, dst_path_test, dst_path_train, patch_size):
         for scene_num, file_name in enumerate(tqdm(file_path_train), 0):
             if 'PolyU' in file_name:
                 noisy_paths = glob.glob(file_name + '/*.JPG')
-                noisy_imgs = [noisy_paths[0], noisy_paths[99]]
+                noisy_imgs = [noisy_paths[0], noisy_paths[33], noisy_paths[66], noisy_paths[99]]
                 gt = np.array(Image.open(noisy_imgs[0])).astype(np.float32)
                 for i in range(1, len(noisy_imgs)):
-                    gt += np.array(Image.open(noisy_imgs[i]))
+                    gt += np.array(Image.open(noisy_imgs[i])).astype(np.float32)
                 gt = gt / 100
                 gt = np.clip(gt, 0, 255).astype(np.uint8)
                 for img_num in range(len(noisy_imgs)):
                     noisy = np.array(Image.open(noisy_imgs[img_num]))
                     img = np.concatenate([noisy, gt], 2)
                     [h, w, c] = img.shape
-                    patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, opt.random, 300)
+                    patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, rand, 300)
                     for patch_num in range(len(patch_list)):
                         noisy_patch = patch_list[patch_num][:, :, 0:3]
                         clean_patch = patch_list[patch_num][:, :, 3:6]
@@ -189,17 +179,17 @@ def prepare_polyu_data(src_files, dst_path_test, dst_path_train, patch_size):
         for scene_num, file_name in enumerate(tqdm(file_path_test), 0):
             if 'PolyU' in file_name:
                 noisy_paths = glob.glob(file_name + '/*.JPG')
-                noisy_imgs = [noisy_paths[0], noisy_paths[99]]
+                noisy_imgs = [noisy_paths[0], noisy_paths[33], noisy_paths[66],  noisy_paths[99]]
                 gt = np.array(Image.open(noisy_imgs[0])).astype(np.float32)
                 for i in range(1, len(noisy_imgs)):
-                    gt += np.array(Image.open(noisy_imgs[i]))
+                    gt += np.array(Image.open(noisy_imgs[i])).astype(np.float32)
                 gt = gt / 100
                 gt = np.clip(gt, 0, 255).astype(np.uint8)
                 for img_num in range(len(noisy_imgs)):
                     noisy = np.array(Image.open(noisy_imgs[img_num]))
                     img = np.concatenate([noisy, gt], 2)
                     [h, w, c] = img.shape
-                    patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, opt.random, 300)
+                    patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, rand, 32)
                     for patch_num in range(len(patch_list)):
                         noisy_patch = patch_list[patch_num][:, :, 0:3]
                         clean_patch = patch_list[patch_num][:, :, 3:6]
@@ -208,6 +198,17 @@ def prepare_polyu_data(src_files, dst_path_test, dst_path_train, patch_size):
 
 
 def main():
+    parser = argparse.ArgumentParser(description='PyTorch Super Res Example')
+    parser.add_argument('--patch_size', type=int, default=256, help='Size of cropped HR image')
+    parser.add_argument('--data_set', type=str, default='sidd', help='the dataset to crop')
+    parser.add_argument('--data_set_dir', type=str, default='/mnt/lustre/share/yangmingzhuo/dataset/',
+                        help='the dataset dir')
+    parser.add_argument('--dst_dir', type=str, default='/mnt/lustre/share/yangmingzhuo/processed',
+                        help='the destination dir')
+    parser.add_argument('--seed', type=int, default=0, help='random seed to use. Default=0')
+    parser.add_argument('--random', action='store_true', help='whether to randomly crop images')
+    opt = parser.parse_args()
+
     random.seed(opt.seed)
     np.random.seed(opt.seed)
     patch_size = opt.patch_size
@@ -226,15 +227,15 @@ def main():
     if opt.data_set == 'sidd':
         print("start...")
         print("start...SIDD...")
-        prepare_sidd_data(sidd_src_path_list_test, sidd_src_path_list_train, dst_path_test, dst_path_train, patch_size)
+        prepare_sidd_data(sidd_src_path_list_test, sidd_src_path_list_train, dst_path_test, dst_path_train, patch_size, opt.random)
         print("end...SIDD")
     elif opt.data_set == 'renoir':
         print("start...RENOIR...")
-        prepare_renoir_data(renoir_src_path_list, dst_path_test, dst_path_train, patch_size)
+        prepare_renoir_data(renoir_src_path_list, dst_path_test, dst_path_train, patch_size, opt.random)
         print("end...RENOIR")
     elif opt.data_set == 'polyu':
         print("start...PolyU...")
-        prepare_polyu_data(polyu_src_path_list, dst_path_test, dst_path_train, patch_size)
+        prepare_polyu_data(polyu_src_path_list, dst_path_test, dst_path_train, patch_size, opt.random)
         print("end...PolyU")
         print('end')
 
