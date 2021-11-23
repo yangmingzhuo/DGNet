@@ -122,7 +122,6 @@ def prepare_renoir_data(src_files, dst_path_test, dst_path_train, patch_size, ra
         # prepare testing data
         print('RENOIR test data processing...')
         for scene_num, file_name in enumerate(tqdm(file_path_test), 0):
-            print(file_name)
             if 'RENOIR' in file_name:
                 ref_imgs = glob.glob(file_name + '/*Reference.bmp')
                 full_imgs = glob.glob(file_name + '/*full.bmp')

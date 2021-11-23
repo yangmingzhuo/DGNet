@@ -1,13 +1,18 @@
 import os
+import torch
+import cv2
+from utils.util import *
+from data.dataloader import *
+from torch.utils.data import DataLoader
+import time
 import numpy as np
 from skimage import img_as_ubyte
 import argparse
 from model.ELD_UNet import ELD_UNet
 from tqdm import tqdm
 from scipy.io import loadmat, savemat
-from utils.util import load_checkpoint, mkdir
-import torch
-import cv2
+from skimage.measure import compare_ssim, compare_psnr
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--pretrained', type=str, default='./', help="Checkpoints directory,  (default:./checkpoints)")
@@ -21,21 +26,58 @@ os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = opt.gpus
 
 
-def denoise(model, noisy_image):
-    with torch.autograd.set_grad_enabled(False):
-        torch.cuda.synchronize()
+def valid(epoch, data_loader, model, logger, writer):
+    logger.info('Epoch[{}]: Validation start'.format(epoch))
+    t0 = time.time()
+    model.eval()
+    psnr_val = AverageMeter()
+    ssim_val = AverageMeter()
 
-        phi = model(noisy_image)
-        torch.cuda.synchronize()
-        im_denoise = phi.cpu().numpy()
+    for iteration, batch in enumerate(data_loader, 0):
+        noisy = batch[0].cuda()
+        target = batch[1].cuda()
 
-    im_denoise = np.transpose(im_denoise.squeeze(), (1, 2, 0))
-    im_denoise = img_as_ubyte(im_denoise.clip(0, 1))
+        with torch.no_grad():
+            prediction = model(noisy)
+            prediction = torch.clamp(prediction, 0.0, 1.0)
 
-    return im_denoise
+        prediction = prediction.data.cpu().numpy().astype(np.float32)
+        target = target.data.cpu().numpy().astype(np.float32)
+        for i in range(prediction.shape[0]):
+            psnr_val.update(compare_psnr(prediction[i, :, :, :], target[i, :, :, :], data_range=1.0), 1)
+            ssim_val.update(compare_ssim(np.transpose(np.squeeze(prediction[i, :, :, :]), (1, 2, 0)), np.transpose(np.squeeze(target[i, :, :, :]), (1, 2, 0)), data_range=1.0, multichannel=True), 1)
+
+    writer.add_scalar('Validation PSNR', psnr_val.avg, epoch)
+    writer.add_scalar('Validation SSIM', ssim_val.avg, epoch)
+    logger.info('Epoch[{}]: Validation end, Average PSNR: {:.4f} dB, Average SSIM: {:.4f}, Time: {:.4f}'.format(epoch, psnr_val.avg, ssim_val.avg, time.time() - t0))
+    logger.info('------------------------------------------------------------------')
+    return psnr_val.avg, ssim_val.avg
 
 
 def main():
+    # Training settings
+    parser = argparse.ArgumentParser(description='PyTorch Super Res Example')
+    parser.add_argument('--batch_size', type=int, default=32, help='training batch size')
+    parser.add_argument('--patch_size', type=int, default=128, help='Size of cropped HR image')
+    parser.add_argument('--nEpochs', type=int, default=200, help='number of epochs to train for')
+    parser.add_argument('--lr', type=float, default=0.0002, help='learning rate. default=0.0002')
+    parser.add_argument('--lr_min', type=float, default=0.000001, help='minimum learning rate. default=0.000001')
+    parser.add_argument('--test_batch_size', type=int, default=32, help='testing batch size, default=1')
+    parser.add_argument('--data_set', type=str, default='sidd', help='the exact dataset we want to train on')
+    parser.add_argument('--random', action='store_true', help='whether to randomly crop images')
+
+    # Global settings
+    parser.add_argument('--threads', type=int, default=4, help='number of threads for data loader to use')
+    parser.add_argument('--gpus', default=1, type=str, help='id of gpus')
+    parser.add_argument('--data_dir', type=str, default='/mnt/lustre/share/yangmingzhuo', help='the dataset dir')
+    parser.add_argument('--log_dir', default='./logs/', help='Location to save checkpoint models')
+    parser.add_argument('--model_type', type=str, default='ELU_UNet', help='the name of model')
+    parser.add_argument('--seed', type=int, default=0, help='random seed to use. Default=0')
+    parser.add_argument('--resume', action='store_true', help='Whether to resume the training')
+    parser.add_argument('--start_iter', type=int, default=1, help='starting epoch')
+    parser.add_argument('--weight_decay', type=float, default=0.00000001, help='weight_decay')
+    parser.add_argument('--num_workers', type=int, default=8, help='number of workers')
+    opt = parser.parse_args()
     use_gpu = True
     # load the pretrained model
     print('Loading the Model')
@@ -48,6 +90,9 @@ def main():
     load_checkpoint(net, checkpoint)
     net.eval()
     mkdir(opt.out_folder)
+
+    val_set = LoadDataset(src_path=os.path.join(opt.data_dir, data_process, 'test', opt.data_set + '_patch_test'), patch_size=opt.patch_size, train=False)
+    val_data_loader = DataLoader(dataset=val_set, batch_size=opt.test_batch_size, shuffle=False, num_workers=opt.num_workers, drop_last=True)
 
     # load SIDD benchmark dataset and information
     noisy_data_mat_file = os.path.join(opt.data_folder, 'ValidationNoisyBlocksSrgb.mat')
