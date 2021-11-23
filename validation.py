@@ -1,8 +1,6 @@
-import os
-import torch
 import cv2
 from utils.util import *
-from data.dataloader import *
+from dataloader import *
 from torch.utils.data import DataLoader
 import time
 import numpy as np

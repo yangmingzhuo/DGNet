@@ -1,6 +1,5 @@
 from __future__ import print_function
 
-import os
 import time
 import argparse
 import shutil
@@ -12,9 +11,9 @@ import torch.backends.cudnn as cudnn
 from torch.utils.data import DataLoader
 from warmup_scheduler import GradualWarmupScheduler
 from tensorboardX import SummaryWriter
-from skimage.measure import compare_ssim, compare_psnr
+from skimage.measure import compare_psnr
 from model.ELD_UNet import ELD_UNet
-from data.dataloader import *
+from dataloader import *
 from utils.util import *
 
 
@@ -46,7 +45,6 @@ def valid(epoch, data_loader, model, logger, writer):
     t0 = time.time()
     model.eval()
     psnr_val = AverageMeter()
-    ssim_val = AverageMeter()
 
     for iteration, batch in enumerate(data_loader, 0):
         noisy = batch[0].cuda()
@@ -60,13 +58,11 @@ def valid(epoch, data_loader, model, logger, writer):
         target = target.data.cpu().numpy().astype(np.float32)
         for i in range(prediction.shape[0]):
             psnr_val.update(compare_psnr(prediction[i, :, :, :], target[i, :, :, :], data_range=1.0), 1)
-            ssim_val.update(compare_ssim(np.transpose(np.squeeze(prediction[i, :, :, :]), (1, 2, 0)), np.transpose(np.squeeze(target[i, :, :, :]), (1, 2, 0)), data_range=1.0, multichannel=True), 1)
 
     writer.add_scalar('Validation PSNR', psnr_val.avg, epoch)
-    writer.add_scalar('Validation SSIM', ssim_val.avg, epoch)
-    logger.info('Epoch[{}]: Validation end, Average PSNR: {:.4f} dB, Average SSIM: {:.4f}, Time: {:.4f}'.format(epoch, psnr_val.avg, ssim_val.avg, time.time() - t0))
+    logger.info('Epoch[{}]: Validation end, Average PSNR: {:.4f} dB, Time: {:.4f}'.format(epoch, psnr_val.avg, time.time() - t0))
     logger.info('------------------------------------------------------------------')
-    return psnr_val.avg, ssim_val.avg
+    return psnr_val.avg
 
 
 def main():
@@ -166,20 +162,18 @@ def main():
 
     # Training
     psnr_best = 0
-    ssim_best = 0
     epoch_best = 0
     for epoch in range(start_epoch, opt.nEpochs + 1):
         writer.add_scalar('Learning Rate', scheduler.get_lr()[0], epoch)
         train(epoch, model, train_data_loader, optimizer, scheduler, criterion, logger, writer)
-        psnr, ssim = valid(epoch, val_data_loader, model, logger, writer)
+        psnr = valid(epoch, val_data_loader, model, logger, writer)
         torch.save({'epoch': epoch, 'state_dict': model.state_dict(), 'optimizer': optimizer.state_dict()}, os.path.join(checkpoint_folder, "model_latest.pth"))
         if psnr > psnr_best:
             psnr_best = psnr
-            ssim_best = ssim
             epoch_best = epoch
             torch.save({'epoch': epoch, 'state_dict': model.state_dict(), 'optimizer': optimizer.state_dict()}, os.path.join(checkpoint_folder, "model_best.pth"))
         scheduler.step()
-        logger.info('||==> best_epoch = {}, best_psnr = {}, best_ssim ={}'.format(epoch_best, psnr_best, ssim_best))
+        logger.info('||==> best_epoch = {}, best_psnr = {}'.format(epoch_best, psnr_best))
 
 
 if __name__ == '__main__':
