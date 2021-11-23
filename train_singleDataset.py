@@ -118,10 +118,10 @@ def main():
     else:
         data_process = 'processed'
     logger.info('Loading datasets {}, Batch Size: {}, Patch Size: {}'.format(opt.data_set, opt.batch_size, opt.patch_size))
-    train_set = LoadDataset(src_path=os.path.join(opt.data_dir, data_process, 'train', opt.data_set + '_patch_train'), patch_size=opt.patch_size, train=True)
-    train_data_loader = DataLoader(dataset=train_set, batch_size=opt.batch_size, shuffle=True, num_workers=opt.num_workers, drop_last=True)
+    train_set = LoadDataset(src_path=os.path.join(opt.data_dir, data_process, 'train', opt.data_set + '_patch_train'), patch_size=opt.patch_size, train=True,)
+    train_data_loader = DataLoader(dataset=train_set, batch_size=opt.batch_size, shuffle=True, num_workers=opt.num_workers, pin_memory=True)
     val_set = LoadDataset(src_path=os.path.join(opt.data_dir, data_process, 'test', opt.data_set + '_patch_test'), patch_size=opt.patch_size, train=False)
-    val_data_loader = DataLoader(dataset=val_set, batch_size=opt.test_batch_size, shuffle=False, num_workers=opt.num_workers, drop_last=True)
+    val_data_loader = DataLoader(dataset=val_set, batch_size=opt.test_batch_size, shuffle=False, num_workers=opt.num_workers, pin_memory=True)
 
     # Load Network
     logger.info('Building model {}'.format(opt.model_type))

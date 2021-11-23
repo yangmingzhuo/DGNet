@@ -14,18 +14,6 @@ from scipy.io import loadmat, savemat
 from skimage.measure import compare_ssim, compare_psnr
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--pretrained', type=str, default='./', help="Checkpoints directory,  (default:./checkpoints)")
-parser.add_argument('--data_folder', type=str, default='/mnt/lustre/share/yangmingzhuo/processed/SIDD', help='Location to save checkpoint models')
-parser.add_argument('--out_folder', type=str, default='/mnt/lustre/share/yangmingzhuo/test_result/SIDD', help='Location to save checkpoint models')
-parser.add_argument('--model', type=str, default='model_best.pth', help='Location to save checkpoint models')
-parser.add_argument('--Type', type=str, default='SIDD', help='To choose the testing benchmark dataset, SIDD or Dnd')
-parser.add_argument('--gpus', default=1, type=str, help='number of gpus')
-opt = parser.parse_args()
-os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = opt.gpus
-
-
 def valid(epoch, data_loader, model, logger, writer):
     logger.info('Epoch[{}]: Validation start'.format(epoch))
     t0 = time.time()
@@ -55,30 +43,19 @@ def valid(epoch, data_loader, model, logger, writer):
 
 
 def main():
-    # Training settings
-    parser = argparse.ArgumentParser(description='PyTorch Super Res Example')
-    parser.add_argument('--batch_size', type=int, default=32, help='training batch size')
-    parser.add_argument('--patch_size', type=int, default=128, help='Size of cropped HR image')
-    parser.add_argument('--nEpochs', type=int, default=200, help='number of epochs to train for')
-    parser.add_argument('--lr', type=float, default=0.0002, help='learning rate. default=0.0002')
-    parser.add_argument('--lr_min', type=float, default=0.000001, help='minimum learning rate. default=0.000001')
-    parser.add_argument('--test_batch_size', type=int, default=32, help='testing batch size, default=1')
-    parser.add_argument('--data_set', type=str, default='sidd', help='the exact dataset we want to train on')
-    parser.add_argument('--random', action='store_true', help='whether to randomly crop images')
-
-    # Global settings
-    parser.add_argument('--threads', type=int, default=4, help='number of threads for data loader to use')
-    parser.add_argument('--gpus', default=1, type=str, help='id of gpus')
-    parser.add_argument('--data_dir', type=str, default='/mnt/lustre/share/yangmingzhuo', help='the dataset dir')
-    parser.add_argument('--log_dir', default='./logs/', help='Location to save checkpoint models')
-    parser.add_argument('--model_type', type=str, default='ELU_UNet', help='the name of model')
-    parser.add_argument('--seed', type=int, default=0, help='random seed to use. Default=0')
-    parser.add_argument('--resume', action='store_true', help='Whether to resume the training')
-    parser.add_argument('--start_iter', type=int, default=1, help='starting epoch')
-    parser.add_argument('--weight_decay', type=float, default=0.00000001, help='weight_decay')
-    parser.add_argument('--num_workers', type=int, default=8, help='number of workers')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--pretrained', type=str, default='./', help="Checkpoints directory,  (default:./checkpoints)")
+    parser.add_argument('--data_folder', type=str, default='/mnt/lustre/share/yangmingzhuo/processed/SIDD',
+                        help='Location to save checkpoint models')
+    parser.add_argument('--out_folder', type=str, default='/mnt/lustre/share/yangmingzhuo/test_result/SIDD',
+                        help='Location to save checkpoint models')
+    parser.add_argument('--model', type=str, default='model_best.pth', help='Location to save checkpoint models')
+    parser.add_argument('--Type', type=str, default='SIDD', help='To choose the testing benchmark dataset, SIDD or Dnd')
+    parser.add_argument('--gpus', default=1, type=str, help='number of gpus')
     opt = parser.parse_args()
-    use_gpu = True
+    os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+    os.environ["CUDA_VISIBLE_DEVICES"] = opt.gpus
+
     # load the pretrained model
     print('Loading the Model')
     net = ELD_UNet()
