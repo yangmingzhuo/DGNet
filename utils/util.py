@@ -3,14 +3,28 @@ import sys
 import logging
 import torch
 import glob
-from natsort import natsorted
 from collections import OrderedDict
+import shutil
 
 
 def mkdir(path):
     if not os.path.exists(path):
         os.makedirs(path)
     return path
+
+
+def output_process(output_path):
+    if os.path.exists(output_path):
+        print("{} file exist!".format(output_path))
+        action = input("Select Action: d (delete) / q (quit):").lower().strip()
+        act = action
+        if act == 'd':
+            shutil.rmtree(output_path)
+        else:
+            raise OSError("Directory {} exits!".format(output_path))
+
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
 
 
 def get_logger(save_path, logger_name):
@@ -37,37 +51,8 @@ def print_network(net, logger):
     num_params = 0
     for param in net.parameters():
         num_params += param.numel()
-    logger.info(net)
+    logger.info('model={}'.format(net))
     logger.info('Total number of parameters: {}'.format(num_params))
-
-
-def get_last_path(path, session):
-    x = natsorted(glob.glob(os.path.join(path, '*{}'.format(session))))[-1]
-    return x
-
-
-def load_optim(optimizer, weights):
-    checkpoint = torch.load(weights)
-    optimizer.load_state_dict(checkpoint['optimizer'])
-
-
-def load_start_epoch(weights):
-    checkpoint = torch.load(weights)
-    epoch = checkpoint["epoch"]
-    return epoch
-
-
-def load_checkpoint(model, weights):
-    checkpoint = torch.load(weights)
-    try:
-        model.load_state_dict(checkpoint["state_dict"])
-    except:
-        state_dict = checkpoint["state_dict"]
-        new_state_dict = OrderedDict()
-        for k, v in state_dict.items():
-            name = k[7:] # remove `module.`
-            new_state_dict[name] = v
-        model.load_state_dict(new_state_dict)
 
 
 class AverageMeter(object):
