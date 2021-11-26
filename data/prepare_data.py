@@ -30,7 +30,8 @@ def crop_patch(img, img_size=(512, 512), patch_size=(256, 256), stride=256, rand
     count = 0
     patch_list = []
     if random_crop:
-        pos = [(np.random.randint(0, img_size[1] - patch_size[1]), np.random.randint(0, img_size[0] - patch_size[0])) for i in range(crop_num)]
+        pos = [(np.random.randint(0, img_size[1] - patch_size[1]), np.random.randint(0, img_size[0] - patch_size[0]))
+               for i in range(crop_num)]
     else:
         pos = [(x, y) for x in range(0, img_size[1] - patch_size[1], stride) for y in
                range(0, img_size[0] - patch_size[0], stride)]
@@ -43,7 +44,8 @@ def crop_patch(img, img_size=(512, 512), patch_size=(256, 256), stride=256, rand
     return patch_list
 
 
-def prepare_sidd_data(src_files_test, src_files_train, dst_path_test, dst_path_train, patch_size, rand, rand_num_train=300):
+def prepare_sidd_data(src_files_test, src_files_train, dst_path_test, dst_path_train, patch_size, rand,
+                      rand_num_train=300):
     dst_path_test = make_dir(os.path.join(dst_path_test, 'sidd_patch_test'))
     dst_path_train = make_dir(os.path.join(dst_path_train, 'sidd_patch_train'))
 
@@ -63,7 +65,9 @@ def prepare_sidd_data(src_files_test, src_files_train, dst_path_test, dst_path_t
             clean_image = clean_data_mat[image_index, block_index, :, :, :]
             clean_image = np.float32(clean_image)
             img = np.concatenate([noisy_image, clean_image], 1)
-            cv2.imwrite(os.path.join(dst_path_test, 'scene_{:03d}_patch_{:03d}.png'.format(image_index + 1, block_index + 1)), cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
+            cv2.imwrite(
+                os.path.join(dst_path_test, 'scene_{:03d}_patch_{:03d}.png'.format(image_index + 1, block_index + 1)),
+                cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
 
     # prepare training data
     print('SIDD train data processing...')
@@ -86,10 +90,14 @@ def prepare_sidd_data(src_files_test, src_files_train, dst_path_test, dst_path_t
                         noisy_patch = patch_list[patch_num][:, :, 0:3]
                         clean_patch = patch_list[patch_num][:, :, 3:6]
                         img = np.concatenate([noisy_patch, clean_patch], 1)
-                        cv2.imwrite(os.path.join(dst_path_train, 'scene_{:03d}_img_{:03d}_patch_{:03d}.png'.format(scene_num + 1, img_num + 1, patch_num + 1)), img)
+                        cv2.imwrite(os.path.join(dst_path_train,
+                                                 'scene_{:03d}_img_{:03d}_patch_{:03d}.png'.format(scene_num + 1,
+                                                                                                   img_num + 1,
+                                                                                                   patch_num + 1)), img)
 
 
-def prepare_renoir_data(src_files, dst_path_test, dst_path_train, patch_size, rand, rand_num_train=300, rand_num_test=32):
+def prepare_renoir_data(src_files, dst_path_test, dst_path_train, patch_size, rand, rand_num_train=300,
+                        rand_num_test=32):
     dst_path_test = make_dir(os.path.join(dst_path_test, 'renoir_patch_test'))
     dst_path_train = make_dir(os.path.join(dst_path_train, 'renoir_patch_train'))
 
@@ -117,7 +125,9 @@ def prepare_renoir_data(src_files, dst_path_test, dst_path_train, patch_size, ra
                         noisy_patch = patch_list[patch_num][:, :, 0:3]
                         clean_patch = patch_list[patch_num][:, :, 3:6]
                         img = np.concatenate([noisy_patch, clean_patch], 1)
-                        cv2.imwrite(os.path.join(dst_path_train, 'camera_{:03d}_scene_{:03d}_img_{:03d}_patch_{:03d}.png'.format(camera + 1, scene_num + 1, img_num + 1, patch_num + 1)), img)
+                        cv2.imwrite(os.path.join(dst_path_train,
+                                                 'camera_{:03d}_scene_{:03d}_img_{:03d}_patch_{:03d}.png'.format(
+                                                     camera + 1, scene_num + 1, img_num + 1, patch_num + 1)), img)
 
         # prepare testing data
         print('RENOIR test data processing...')
@@ -140,10 +150,13 @@ def prepare_renoir_data(src_files, dst_path_test, dst_path_train, patch_size, ra
                         noisy_patch = patch_list[patch_num][:, :, 0:3]
                         clean_patch = patch_list[patch_num][:, :, 3:6]
                         img = np.concatenate([noisy_patch, clean_patch], 1)
-                        cv2.imwrite(os.path.join(dst_path_test, 'camera_{:03d}_scene_{:03d}_img_{:03d}_patch_{:03d}.png'.format(camera + 1, scene_num + 1, img_num + 1, patch_num + 1)), img)
+                        cv2.imwrite(os.path.join(dst_path_test,
+                                                 'camera_{:03d}_scene_{:03d}_img_{:03d}_patch_{:03d}.png'.format(
+                                                     camera + 1, scene_num + 1, img_num + 1, patch_num + 1)), img)
 
 
-def prepare_polyu_data(src_files, dst_path_test, dst_path_train, patch_size, rand, rand_num_train=300, rand_num_test=32):
+def prepare_polyu_data(src_files, dst_path_test, dst_path_train, patch_size, rand, rand_num_train=300,
+                       rand_num_test=32):
     dst_path_test = make_dir(os.path.join(dst_path_test, 'polyu_patch_test'))
     dst_path_train = make_dir(os.path.join(dst_path_train, 'polyu_patch_train'))
 
@@ -170,13 +183,16 @@ def prepare_polyu_data(src_files, dst_path_test, dst_path_train, patch_size, ran
                         noisy_patch = patch_list[patch_num][:, :, 0:3]
                         clean_patch = patch_list[patch_num][:, :, 3:6]
                         img = np.concatenate([noisy_patch, clean_patch], 1)
-                        cv2.imwrite(os.path.join(dst_path_train, 'scene_{:03d}_img_{:03d}_patch_{:03d}.png'.format(scene_num + 1, img_num + 1, patch_num + 1)), img)
+                        cv2.imwrite(os.path.join(dst_path_train,
+                                                 'scene_{:03d}_img_{:03d}_patch_{:03d}.png'.format(scene_num + 1,
+                                                                                                   img_num + 1,
+                                                                                                   patch_num + 1)), img)
 
         print('PolyU train data processing...')
         for scene_num, file_name in enumerate(tqdm(file_path_test), 0):
             if 'PolyU' in file_name:
                 noisy_paths = glob.glob(file_name + '/*.JPG')
-                noisy_imgs = [noisy_paths[0], noisy_paths[33], noisy_paths[66],  noisy_paths[99]]
+                noisy_imgs = [noisy_paths[0], noisy_paths[33], noisy_paths[66], noisy_paths[99]]
                 gt = np.array(cv2.imread(noisy_imgs[0])).astype(np.float32)
                 for i in range(1, len(noisy_imgs)):
                     gt += np.array(cv2.imread(noisy_imgs[i])).astype(np.float32)
@@ -191,7 +207,10 @@ def prepare_polyu_data(src_files, dst_path_test, dst_path_train, patch_size, ran
                         noisy_patch = patch_list[patch_num][:, :, 0:3]
                         clean_patch = patch_list[patch_num][:, :, 3:6]
                         img = np.concatenate([noisy_patch, clean_patch], 1)
-                        cv2.imwrite(os.path.join(dst_path_test, 'scene_{:03d}_img_{:03d}_patch_{:03d}.png'.format(scene_num + 1, img_num + 1, patch_num + 1)), img)
+                        cv2.imwrite(os.path.join(dst_path_test,
+                                                 'scene_{:03d}_img_{:03d}_patch_{:03d}.png'.format(scene_num + 1,
+                                                                                                   img_num + 1,
+                                                                                                   patch_num + 1)), img)
 
 
 def main():
@@ -220,7 +239,7 @@ def main():
                             os.path.join(root_dir, "train/RENOIR/S90_Aligned/"),
                             ]
     polyu_src_path_list = [os.path.join(root_dir, "train/PolyUDataset/")]
-    if(opt.random):
+    if (opt.random):
         dst_dir = make_dir(os.path.join(opt.dst_dir, 'random_processed'))
     else:
         dst_dir = make_dir(os.path.join(opt.dst_dir, 'processed'))
@@ -229,15 +248,18 @@ def main():
     if opt.data_set == 'sidd':
         print("start...")
         print("start...SIDD...")
-        prepare_sidd_data(sidd_src_path_list_test, sidd_src_path_list_train, dst_path_test, dst_path_train, patch_size, opt.random, opt.rand_num_train)
+        prepare_sidd_data(sidd_src_path_list_test, sidd_src_path_list_train, dst_path_test, dst_path_train, patch_size,
+                          opt.random, opt.rand_num_train)
         print("end...SIDD")
     elif opt.data_set == 'renoir':
         print("start...RENOIR...")
-        prepare_renoir_data(renoir_src_path_list, dst_path_test, dst_path_train, patch_size, opt.random, opt.rand_num_train, opt.rand_num_test)
+        prepare_renoir_data(renoir_src_path_list, dst_path_test, dst_path_train, patch_size, opt.random,
+                            opt.rand_num_train, opt.rand_num_test)
         print("end...RENOIR")
     elif opt.data_set == 'polyu':
         print("start...PolyU...")
-        prepare_polyu_data(polyu_src_path_list, dst_path_test, dst_path_train, patch_size, opt.random, opt.rand_num_train, opt.rand_num_test)
+        prepare_polyu_data(polyu_src_path_list, dst_path_test, dst_path_train, patch_size, opt.random,
+                           opt.rand_num_train, opt.rand_num_test)
         print("end...PolyU")
     print('end')
 

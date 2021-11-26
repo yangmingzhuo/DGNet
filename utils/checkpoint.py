@@ -63,3 +63,13 @@ def load_model(checkpoint_path, model, optimizer, logger):
     logger.info("load pretrained model and optimizer: epoch={}, psnr_best={}, model={}, optimizer={}"
                 .format(start_epoch, psnr_best, model, optimizer))
     return model, start_epoch, optimizer, psnr_best
+
+
+def load_single_model(checkpoint_path, model, logger):
+    check_point_params = torch.load(checkpoint_path)
+    model_state = check_point_params["model"]
+    psnr_best = check_point_params["psnr_best"]
+    model = load_state(model, model_state)
+
+    logger.info("load pretrained model and optimizer: psnr_best={}, model={}".format(psnr_best, model))
+    return model, psnr_best

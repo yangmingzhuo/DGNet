@@ -14,6 +14,7 @@ from model.ELD_UNet import ELD_UNet
 from data.dataloader import *
 from utils.util import *
 from utils.checkpoint import *
+from utils.mat_ssim import *
 
 
 def train(opt, epoch, model, data_loader, optimizer, scheduler, criterion, logger, writer):
@@ -32,7 +33,7 @@ def train(opt, epoch, model, data_loader, optimizer, scheduler, criterion, logge
 
         epoch_loss.update(loss.data, noisy.size(0))
         if iteration % opt.print_freq == 0:
-            logger.info('Train epoch: [{:d}/{:d}][{:d}/{:d}]\tlr={:.6f}\tl1_loss={:.4f}'
+            logger.info('Train epoch: [{:d}/{:d}]\titeration: [{:d}/{:d}]\tlr={:.6f}\tl1_loss={:.4f}'
                         .format(epoch, opt.nEpochs, iteration, len(data_loader), scheduler.get_lr()[0], epoch_loss.avg))
 
     writer.add_scalar('Train_L1_loss', epoch_loss.avg, epoch)
@@ -41,10 +42,11 @@ def train(opt, epoch, model, data_loader, optimizer, scheduler, criterion, logge
                 .format(epoch, opt.nEpochs, scheduler.get_lr()[0], epoch_loss.avg, time.time() - t0))
 
 
-def valid(opt, epoch, data_loader, model, logger, writer):
+def valid(opt, epoch, data_loader, model, criterion, logger, writer):
     t0 = time.time()
     model.eval()
     psnr_val = AverageMeter()
+    loss_val = AverageMeter()
 
     for iteration, (noisy, target) in enumerate(data_loader):
         noisy, target = noisy.cuda(), target.cuda()
@@ -52,16 +54,18 @@ def valid(opt, epoch, data_loader, model, logger, writer):
             prediction = model(noisy)
             prediction = torch.clamp(prediction, 0.0, 1.0)
 
+        loss = criterion(prediction, target)
         prediction = prediction.data.cpu().numpy().astype(np.float32)
         target = target.data.cpu().numpy().astype(np.float32)
         for i in range(prediction.shape[0]):
             psnr_val.update(compare_psnr(prediction[i, :, :, :], target[i, :, :, :], data_range=1.0), 1)
+        loss_val.update(loss.data, prediction.shape[0])
 
     writer.add_scalar('Validation_PSNR', psnr_val.avg, epoch)
-    logger.info('||==> Validation epoch: [{:d}/{:d}]\tval_PSNR={:.4f}\tcost_time={:.4f}'
-                .format(epoch, opt.nEpochs, psnr_val.avg, time.time() - t0))
+    writer.add_scalar('Validation_loss', loss_val.avg, epoch)
+    logger.info('||==> Validation epoch: [{:d}/{:d}]\tval_PSNR={:.4f}\tval_loss={:.4f}\tcost_time={:.4f}'
+                .format(epoch, opt.nEpochs, psnr_val.avg, loss_val.avg, time.time() - t0))
     return psnr_val.avg
-
 
 def main():
     parser = argparse.ArgumentParser(description='PyTorch image denoising')
@@ -174,7 +178,7 @@ def main():
         # training
         train(opt, epoch, model, train_data_loader, optimizer, scheduler, criterion, logger, writer)
         # validation
-        psnr = valid(opt, epoch, val_data_loader, model, logger, writer)
+        psnr = valid(opt, epoch, val_data_loader, model, criterion, logger, writer)
         # save model
         save_model(os.path.join(checkpoint_folder, "model_latest.pth"), epoch, model, optimizer, psnr_best, logger)
 
@@ -185,7 +189,7 @@ def main():
         scheduler.step()
         logger.info('||==> best_epoch = {}, best_psnr = {}'.format(epoch_best, psnr_best))
 
-    # TODO: compute SSIM fo the model_best.pth
+    gen_mat(ELD_UNet(), os.path.join(checkpoint_folder, "model_best.pth"), checkpoint_folder, val_data_loader, logger)
 
 
 if __name__ == '__main__':
