@@ -14,7 +14,7 @@ from model.ELD_UNet import ELD_UNet
 from data.dataloader import *
 from utils.util import *
 from utils.checkpoint import *
-from utils.mat_ssim import *
+from utils.gen_mat import *
 
 
 def train(opt, epoch, model, data_loader, optimizer, scheduler, criterion, logger, writer):
