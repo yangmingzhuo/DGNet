@@ -8,3 +8,4 @@
 /checkpoint
 data/prepare.sh
 train.sh
+.idea

@@ -1,16 +1,17 @@
 import os
 import numpy as np
 import torch
+import scipy.io as sio
 from utils.util import *
 from utils.checkpoint import *
-import scipy.io as sio
 
 
-def gen_mat(model, pretrain_model, dst_path, data_loader, logger):
+def gen_mat(model, pretrain_model, dst_path, data_loader, batch_size, patch_size, logger):
     model, psnr_best = load_single_model(pretrain_model, model, logger)
-    logger.info('Resume start epoch: {}, Learning rate:{:.6f}'.format(start_epoch, scheduler.get_lr()[0]))
-    store_data_prediction = np.zeros((len(data_loader) * 8, 256, 256, 3), float)
-    store_data_clean = np.zeros((len(data_loader) * 8, 256, 256, 3), float)
+    store_data_prediction = np.zeros((len(data_loader) * batch_size, patch_size, patch_size, 3), float)
+    store_data_clean = np.zeros((len(data_loader) * batch_size, patch_size, patch_size, 3), float)
+
+    num = 0
     for iteration, (noisy, target) in enumerate(data_loader):
         noisy, target = noisy.cuda(), target.cuda()
         with torch.no_grad():
@@ -20,6 +21,9 @@ def gen_mat(model, pretrain_model, dst_path, data_loader, logger):
             for i in range(prediction.shape[0]):
                 store_data_prediction[iteration * prediction.shape[0] + i, :, :, :] = prediction
                 store_data_clean[iteration * prediction.shape[0] + i, :, :, :] = target
+                num += 1
 
+    store_data_clean.resize((num, patch_size, patch_size, 3))
+    store_data_prediction.resize((num, patch_size, patch_size, 3))
     sio.savemat(os.path.join(dst_path, 'denoised.mat'), {"denoised": store_data_prediction, })
     sio.savemat(os.path.join(dst_path, 'clean.mat'), {"clean": store_data_clean, })

@@ -13,10 +13,10 @@ def mkdir(path):
     return path
 
 
-def output_process(output_path):
+def output_process(output_path, opt):
     if os.path.exists(output_path):
         print("{} file exist!".format(output_path))
-        action = input("Select Action: d (delete) / q (quit):").lower().strip()
+        action = opt.lower().strip()
         act = action
         if act == 'd':
             shutil.rmtree(output_path)

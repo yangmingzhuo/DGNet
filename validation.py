@@ -89,7 +89,8 @@ def main():
     model, psnr_best = load_single_model(opt.pretrain_model, model, logger)
 
     valid(val_data_loader, model, logger)
-
+    dst_folder = make_dir(os.path.join(checkpoint_folder, opt.data_set))
+    gen_mat(ELD_UNet(), os.path.join(checkpoint_folder, "model_best.pth"), dst_folder, val_data_loader, logger)
 
 if __name__ == '__main__':
     main()

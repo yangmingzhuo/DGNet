@@ -109,7 +109,7 @@ def main():
     # log setting
     log_folder = os.path.join(opt.log_dir, "model_{}_ds_{}_ps_{}_bs_{}_ep_{}_lr_{}_rd_{}"
                               .format(opt.model_type, opt.data_set, opt.patch_size, opt.batch_size, opt.nEpochs, opt.lr, opt.random))
-    output_process(log_folder)
+    output_process(log_folder, 'd')
     checkpoint_folder = mkdir(os.path.join(log_folder, 'checkpoint'))
     writer = SummaryWriter(log_folder)
     logger = get_logger(log_folder, 'DGNet_log')
@@ -176,7 +176,7 @@ def main():
     # training
     for epoch in range(start_epoch, opt.nEpochs + 1):
         # training
-        train(opt, epoch, model, train_data_loader, optimizer, scheduler, criterion, logger, writer)
+        # train(opt, epoch, model, train_data_loader, optimizer, scheduler, criterion, logger, writer)
         # validation
         psnr = valid(opt, epoch, val_data_loader, model, criterion, logger, writer)
         # save model
@@ -188,8 +188,7 @@ def main():
             save_model(os.path.join(checkpoint_folder, "model_best.pth"), epoch, model, optimizer, psnr_best, logger)
         scheduler.step()
         logger.info('||==> best_epoch = {}, best_psnr = {}'.format(epoch_best, psnr_best))
-
-    gen_mat(ELD_UNet(), os.path.join(checkpoint_folder, "model_best.pth"), checkpoint_folder, val_data_loader, logger)
+        gen_mat(ELD_UNet(), os.path.join(checkpoint_folder, "model_best.pth"), checkpoint_folder, opt.test_batch_size, opt.patch_size, val_data_loader, logger)
 
 
 if __name__ == '__main__':
