@@ -3,9 +3,9 @@
 /data/test/test/
 /data/train/RENOIR/
 /data/train/SIDD/
+.idea
 /data/train/train.h5
 /data/test/val.h5
 /checkpoint
 data/prepare.sh
 train.sh
-.idea

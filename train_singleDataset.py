@@ -188,7 +188,7 @@ def main():
             save_model(os.path.join(checkpoint_folder, "model_best.pth"), epoch, model, optimizer, psnr_best, logger)
         scheduler.step()
         logger.info('||==> best_epoch = {}, best_psnr = {}'.format(epoch_best, psnr_best))
-        gen_mat(ELD_UNet(), os.path.join(checkpoint_folder, "model_best.pth"), checkpoint_folder, opt.test_batch_size, opt.patch_size, val_data_loader, logger)
+        gen_mat(ELD_UNet(), os.path.join(checkpoint_folder, "model_best.pth"), checkpoint_folder,  val_data_loader, opt.test_batch_size, opt.patch_size, logger)
 
 
 if __name__ == '__main__':
