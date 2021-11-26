@@ -9,3 +9,4 @@
 /checkpoint
 data/prepare.sh
 train.sh
+/mat/*.mat
