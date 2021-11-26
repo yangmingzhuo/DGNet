@@ -17,8 +17,8 @@ for i = 1:len(denoised)
    total_ssim = total_ssim + ssim_val;
    total_psnr = total_psnr + psnr_val;
 end
-qm_psnr = total_psnr / (40*32);
-qm_ssim = total_ssim / (40*32);
+qm_psnr = total_psnr / len(denoised);
+qm_ssim = total_ssim / len(denoised);
 
 fprintf('PSNR: %f SSIM: %f\n', qm_psnr, qm_ssim);
 

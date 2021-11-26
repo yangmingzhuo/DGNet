@@ -28,23 +28,22 @@ class LoadDataset(data.Dataset):
         noisy_img = tf.to_tensor(noisy)
         clean_img = tf.to_tensor(clean)
 
-        # Crop Patch
-        height, width = noisy_img.shape[1], clean_img.shape[2]
-        rr = random.randint(0, height - patch_size)
-        cc = random.randint(0, width - patch_size)
-        noisy_img = noisy_img[:, rr:rr+patch_size, cc:cc+patch_size]
-        clean_img = clean_img[:, rr:rr+patch_size, cc:cc+patch_size]
-
-        # Data Augmentation
         if self.train:
+            # crop Patch
+            height, width = noisy_img.shape[1], clean_img.shape[2]
+            rr = random.randint(0, height - patch_size)
+            cc = random.randint(0, width - patch_size)
+            noisy_img = noisy_img[:, rr:rr + patch_size, cc:cc + patch_size]
+            clean_img = clean_img[:, rr:rr + patch_size, cc:cc + patch_size]
+            # data Augmentation
             p = 0.5
-            if random.random() > p:  # RandomRot90
+            if random.random() > p:
                 noisy_img = torch.rot90(noisy_img, dims=(1, 2))
                 clean_img = torch.rot90(clean_img, dims=(1, 2))
-            if random.random() > p:  # RandomHorizontalFlip
+            if random.random() > p:
                 noisy_img = noisy_img.flip(1)
                 clean_img = clean_img.flip(1)
-            if random.random() > p:  # RandomVerticalFlip
+            if random.random() > p:
                 noisy_img = noisy_img.flip(2)
                 clean_img = clean_img.flip(2)
 

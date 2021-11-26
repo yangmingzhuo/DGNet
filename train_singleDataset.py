@@ -75,6 +75,7 @@ def main():
     parser.add_argument('--batch_size', type=int, default=32, help='training batch size: 4, 8, 16, 32')
     parser.add_argument('--patch_size', type=int, default=128, help='Size of cropped HR image')
     parser.add_argument('--test_batch_size', type=int, default=32, help='testing batch size, default=1')
+    parser.add_argument('--test_patch_size', type=int, default=256, help='testing batch size, default=1')
     parser.add_argument('--random', action='store_true', help='whether to randomly crop images')
 
     # training settings
@@ -127,7 +128,7 @@ def main():
                                    num_workers=opt.num_workers, pin_memory=True)
 
     val_set = LoadDataset(src_path=os.path.join(opt.data_dir, data_process, 'test',
-                                                opt.data_set + '_patch_test'), patch_size=opt.patch_size, train=False)
+                                                opt.data_set + '_patch_test'), patch_size=opt.test_patch_size, train=False)
     val_data_loader = DataLoader(dataset=val_set, batch_size=opt.test_batch_size, shuffle=False,
                                  num_workers=opt.num_workers, pin_memory=True)
 
@@ -176,7 +177,7 @@ def main():
     # training
     for epoch in range(start_epoch, opt.nEpochs + 1):
         # training
-        # train(opt, epoch, model, train_data_loader, optimizer, scheduler, criterion, logger, writer)
+        #train(opt, epoch, model, train_data_loader, optimizer, scheduler, criterion, logger, writer)
         # validation
         psnr = valid(opt, epoch, val_data_loader, model, criterion, logger, writer)
         # save model
@@ -190,7 +191,7 @@ def main():
         logger.info('||==> best_epoch = {}, best_psnr = {}'.format(epoch_best, psnr_best))
 
     # generate mat for SSIM validation
-    gen_mat(ELD_UNet(), os.path.join(checkpoint_folder, "model_best.pth"), checkpoint_folder,  val_data_loader, opt.test_batch_size, opt.patch_size, logger)
+    gen_mat(ELD_UNet(), os.path.join(checkpoint_folder, "model_best.pth"), checkpoint_folder,  val_data_loader, opt.test_batch_size, opt.test_patch_size, logger)
 
 
 if __name__ == '__main__':
