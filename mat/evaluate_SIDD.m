@@ -5,11 +5,10 @@ gt = load('clean.mat');
 
 denoised = denoised.denoised;
 gt = gt.clean;
-gt = im2single(gt);
 
 total_psnr = 0;
 total_ssim = 0;
-for i = 1:len(denoised)
+for i = 1:length(denoised)
    denoised_patch = squeeze(denoised(i,:,:,:));
    gt_patch = squeeze(gt(i,:,:,:));
    ssim_val = ssim(denoised_patch, gt_patch);
@@ -17,8 +16,8 @@ for i = 1:len(denoised)
    total_ssim = total_ssim + ssim_val;
    total_psnr = total_psnr + psnr_val;
 end
-qm_psnr = total_psnr / len(denoised);
-qm_ssim = total_ssim / len(denoised);
+qm_psnr = total_psnr / length(denoised);
+qm_ssim = total_ssim / length(denoised);
 
 fprintf('PSNR: %f SSIM: %f\n', qm_psnr, qm_ssim);
 

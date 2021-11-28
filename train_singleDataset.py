@@ -177,7 +177,7 @@ def main():
     # training
     for epoch in range(start_epoch, opt.nEpochs + 1):
         # training
-        #train(opt, epoch, model, train_data_loader, optimizer, scheduler, criterion, logger, writer)
+        train(opt, epoch, model, train_data_loader, optimizer, scheduler, criterion, logger, writer)
         # validation
         psnr = valid(opt, epoch, val_data_loader, model, criterion, logger, writer)
         # save model
