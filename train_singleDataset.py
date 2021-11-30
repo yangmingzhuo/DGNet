@@ -71,17 +71,16 @@ def main():
     parser = argparse.ArgumentParser(description='PyTorch image denoising')
     # dataset settings
     parser.add_argument('--data_set', type=str, default='sidd', help='the exact dataset we want to train on')
-    parser.add_argument('--data_dir', type=str, default='/mnt/lustre/share/yangmingzhuo', help='the dataset dir')
+    parser.add_argument('--data_dir', type=str, default='/mnt/lustre/share/yangmingzhuo/processed', help='the dataset dir')
     parser.add_argument('--batch_size', type=int, default=32, help='training batch size: 4, 8, 16, 32')
     parser.add_argument('--patch_size', type=int, default=128, help='Size of cropped HR image')
     parser.add_argument('--test_batch_size', type=int, default=32, help='testing batch size, default=1')
     parser.add_argument('--test_patch_size', type=int, default=256, help='testing batch size, default=1')
-    parser.add_argument('--random', action='store_true', help='whether to randomly crop images')
 
     # training settings
     parser.add_argument('--nEpochs', type=int, default=200, help='number of epochs to train for')
-    parser.add_argument('--lr', type=float, default=0.0002, help='learning rate. default=0.0002')
-    parser.add_argument('--lr_min', type=float, default=0.000001, help='minimum learning rate. default=0.000001')
+    parser.add_argument('--lr', type=float, default=2e-4, help='learning rate. default=0.0002')
+    parser.add_argument('--lr_min', type=float, default=1e-6, help='minimum learning rate. default=0.000001')
     parser.add_argument('--start_iter', type=int, default=1, help='starting epoch')
     parser.add_argument('--weight_decay', type=float, default=1e-8, help='weight_decay')
 
@@ -108,27 +107,22 @@ def main():
     epoch_best = 0
 
     # log setting
-    log_folder = os.path.join(opt.log_dir, "model_{}_ds_{}_ps_{}_bs_{}_ep_{}_lr_{}_rd_{}"
-                              .format(opt.model_type, opt.data_set, opt.patch_size, opt.batch_size, opt.nEpochs, opt.lr, opt.random))
+    log_folder = os.path.join(opt.log_dir, "model_{}_gpu_{}_ds_{}_ps_{}_bs_{}_ep_{}_lr_{}_time_{}"
+                              .format(opt.model_type, opt.gpus, opt.data_set, opt.patch_size, opt.batch_size, opt.nEpochs, opt.lr, time.strftime("%Y-%m-%d", time.localtime())))
     output_process(log_folder, 'd')
-    checkpoint_folder = mkdir(os.path.join(log_folder, 'checkpoint'))
+    checkpoint_folder = make_dir(os.path.join(log_folder, 'checkpoint'))
     writer = SummaryWriter(log_folder)
     logger = get_logger(log_folder, 'DGNet_log')
+    logger.info(opt)
 
     # load dataset
-    if opt.random:
-        data_process = 'random_processed'
-    else:
-        data_process = 'processed'
     logger.info('Loading datasets {}, Batch Size: {}, Patch Size: {}'.format(opt.data_set,
                                                                              opt.batch_size, opt.patch_size))
-    train_set = LoadDataset(src_path=os.path.join(opt.data_dir, data_process, 'train',
-                                                  opt.data_set + '_patch_train'), patch_size=opt.patch_size, train=True)
+    train_set = LoadDataset(src_path=os.path.join(opt.data_dir, opt.data_set, 'train'), patch_size=opt.patch_size, train=True)
     train_data_loader = DataLoader(dataset=train_set, batch_size=opt.batch_size, shuffle=True,
                                    num_workers=opt.num_workers, pin_memory=True)
 
-    val_set = LoadDataset(src_path=os.path.join(opt.data_dir, data_process, 'test',
-                                                opt.data_set + '_patch_test'), patch_size=opt.test_patch_size, train=False)
+    val_set = LoadDataset(src_path=os.path.join(opt.data_dir, opt.data_set, 'test'), patch_size=opt.test_patch_size, train=False)
     val_data_loader = DataLoader(dataset=val_set, batch_size=opt.test_batch_size, shuffle=False,
                                  num_workers=opt.num_workers, pin_memory=True)
 
@@ -150,7 +144,8 @@ def main():
 
     # optimizer and scheduler
     warmup_epochs = 3
-    t_max = opt.nEpochs - warmup_epochs + opt.nEpochs / 2
+    # t_max = opt.nEpochs - warmup_epochs + opt.nEpochs / 2
+    t_max = opt.nEpochs - warmup_epochs
     logger.info('Optimizer: Adam Warmup epochs: {}, Learning rate: {}, Scheduler: CosineAnnealingLR, T_max: {}'
                 .format(warmup_epochs, opt.lr, t_max))
 
@@ -190,7 +185,7 @@ def main():
         scheduler.step()
         logger.info('||==> best_epoch = {}, best_psnr = {}'.format(epoch_best, psnr_best))
 
-    # generate mat for SSIM validation
+    # generate matlab_evaluate for SSIM validation
     gen_mat(ELD_UNet(), os.path.join(checkpoint_folder, "model_best.pth"), checkpoint_folder,  val_data_loader, opt.test_batch_size, opt.test_patch_size, logger)
 
 

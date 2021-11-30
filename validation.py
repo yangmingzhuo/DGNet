@@ -11,6 +11,7 @@ from model.ELD_UNet import ELD_UNet
 from data.dataloader import *
 from utils.util import *
 from utils.checkpoint import *
+from utils.gen_mat import *
 
 
 def valid(opt, epoch, data_loader, model, logger, writer):
@@ -63,7 +64,7 @@ def main():
     torch.cuda.manual_seed(opt.seed)
 
     # log setting
-    mkdir(opt.log_dir)
+    make_dir(opt.log_dir)
     log_folder = os.path.join(opt.log_dir)
     logger = get_logger(log_folder, 'DGNet_log')
 

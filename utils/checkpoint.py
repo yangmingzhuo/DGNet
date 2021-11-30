@@ -14,12 +14,6 @@ import torch
 from torch import nn
 
 
-def mkdir(path):
-    if not os.path.exists(path):
-        os.makedirs(path)
-    return path
-
-
 def load_state(model, state_dict):
     """
     load state_dict to model
@@ -46,7 +40,6 @@ def save_model(save_path, epoch, model, optimizer, psnr_best, logger):
     check_point_params['epoch'] = epoch
     check_point_params["psnr_best"] = psnr_best
 
-    # mkdir(save_path)
     torch.save(check_point_params, save_path)
     logger.info('Epoch={}, save model and optimizer, psnr_best={}'.format(epoch, psnr_best))
 

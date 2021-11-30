@@ -7,7 +7,7 @@ from collections import OrderedDict
 import shutil
 
 
-def mkdir(path):
+def make_dir(path):
     if not os.path.exists(path):
         os.makedirs(path)
     return path

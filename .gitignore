@@ -7,6 +7,4 @@
 /data/train/train.h5
 /data/test/val.h5
 /checkpoint
-data/prepare.sh
-train.sh
 /mat/*.mat
