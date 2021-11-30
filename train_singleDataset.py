@@ -185,7 +185,7 @@ def main():
         scheduler.step()
         logger.info('||==> best_epoch = {}, best_psnr = {}'.format(epoch_best, psnr_best))
 
-    # generate matlab_evaluate for SSIM validation
+    # generate evaluate_mat for SSIM validation
     gen_mat(ELD_UNet(), os.path.join(checkpoint_folder, "model_best.pth"), checkpoint_folder,  val_data_loader, opt.test_batch_size, opt.test_patch_size, logger)
 
 

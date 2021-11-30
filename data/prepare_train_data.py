@@ -19,12 +19,13 @@ def prepare_sidd_data(src_path, dst_path, patch_size=256, rand_num_train=300):
 
     # prepare training data
     print('SIDD train data processing...')
-    scene_path = glob.glob(src_path)
-    scene_path.sort()
-    for scene_num, scene_name in enumerate(tqdm(scene_path), 0):
-        gt_imgs = glob.glob(scene_name + '/*GT*.PNG')
+    scene_paths = glob.glob(os.path.join(src_path, '*'))
+    scene_paths.sort()
+    for scene_num, scene_path in enumerate(tqdm(scene_paths), 0):
+        scene_name = os.path.basename(scene_path)
+        gt_imgs = glob.glob(scene_path + '/*GT*.PNG')
         gt_imgs.sort()
-        noisy_imgs = glob.glob(scene_name + '/*NOISY*.PNG')
+        noisy_imgs = glob.glob(scene_path + '/*NOISY*.PNG')
         noisy_imgs.sort()
 
         for img_num in range(len(noisy_imgs)):
@@ -34,15 +35,15 @@ def prepare_sidd_data(src_path, dst_path, patch_size=256, rand_num_train=300):
             [h, w, c] = img.shape
 
             patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, random_crop=True,
-                                    rand_num_train=rand_num_train)
+                                    crop_num=rand_num_train)
             for patch_num in range(len(patch_list)):
                 noisy_patch = patch_list[patch_num][:, :, 0:3]
                 clean_patch = patch_list[patch_num][:, :, 3:6]
                 img = np.concatenate([noisy_patch, clean_patch], 1)
                 cv2.imwrite(os.path.join(dst_path_train,
-                                         'scene_{:03d}_img_{:03d}_patch_{:03d}.png'.format(scene_num + 1,
-                                                                                           img_num + 1,
-                                                                                           patch_num + 1)), img)
+                                         '{}_img_{:03d}_patch_{:03d}.png'.format(scene_name,
+                                                                                 img_num + 1,
+                                                                                 patch_num + 1)), img)
 
 
 def prepare_renoir_data(src_path, dst_path, patch_size, rand_num_train=300):
@@ -52,34 +53,34 @@ def prepare_renoir_data(src_path, dst_path, patch_size, rand_num_train=300):
         shutil.rmtree(dst_path_train)
     make_dir(dst_path_train)
 
-    file_path = glob.glob(src_path)
-    file_path.sort()
+    scene_paths = glob.glob(os.path.join(src_path, '*'))
+    scene_paths.sort()
     # prepare training data
     print('RENOIR train data processing...')
-    for scene_num, file_name in enumerate(tqdm(file_path), 0):
-        if 'RENOIR' in file_name:
-            ref_path = glob.glob(file_name + '/*Reference.bmp')
-            full_path = glob.glob(file_name + '/*full.bmp')
-            noisy_paths = glob.glob(file_name + '/*Noisy.bmp')
-            noisy_paths.sort()
-            ref = np.array(cv2.imread(ref_path[0])).astype(np.float32)
-            full = np.array(cv2.imread(full_path[0])).astype(np.float32)
-            gt = (ref + full) / 2
-            gt = np.clip(gt, 0, 255).astype(np.uint8)
-            for img_num in range(len(noisy_paths)):
-                noisy = np.array(cv2.imread(noisy_paths[img_num]))
-                img = np.concatenate([noisy, gt], 2)
-                [h, w, c] = img.shape
-                patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, random_crop=True,
-                                        rand_num_train=rand_num_train)
-                for patch_num in range(len(patch_list)):
-                    noisy_patch = patch_list[patch_num][:, :, 0:3]
-                    clean_patch = patch_list[patch_num][:, :, 3:6]
-                    img = np.concatenate([noisy_patch, clean_patch], 1)
-                    cv2.imwrite(os.path.join(dst_path_train,
-                                             'scene_{:03d}_img_{:03d}_patch_{:03d}.png'.format(scene_num + 1,
-                                                                                               img_num + 1,
-                                                                                               patch_num + 1)), img)
+    for scene_num, scene_path in enumerate(tqdm(scene_paths), 0):
+        scene_name = os.path.basename(scene_path)
+        ref_path = glob.glob(os.path.join(scene_path, '*Reference.bmp'))
+        full_path = glob.glob(os.path.join(scene_path, '*full.bmp'))
+        noisy_paths = glob.glob(os.path.join(scene_path, '*Noisy.bmp'))
+        noisy_paths.sort()
+        ref = np.array(cv2.imread(ref_path[0])).astype(np.float32)
+        full = np.array(cv2.imread(full_path[0])).astype(np.float32)
+        gt = (ref + full) / 2
+        gt = np.clip(gt, 0, 255).astype(np.uint8)
+        for img_num in range(len(noisy_paths)):
+            noisy = np.array(cv2.imread(noisy_paths[img_num]))
+            img = np.concatenate([noisy, gt], 2)
+            [h, w, c] = img.shape
+            patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, random_crop=True,
+                                    crop_num=rand_num_train)
+            for patch_num in range(len(patch_list)):
+                noisy_patch = patch_list[patch_num][:, :, 0:3]
+                clean_patch = patch_list[patch_num][:, :, 3:6]
+                img = np.concatenate([noisy_patch, clean_patch], 1)
+                cv2.imwrite(os.path.join(dst_path_train,
+                                         '{}_img_{:03d}_patch_{:03d}.png'.format(scene_name,
+                                                                                 img_num + 1,
+                                                                                 patch_num + 1)), img)
 
 
 def prepare_polyu_data(src_path, dst_path, patch_size, rand_num_train=300):
@@ -89,30 +90,30 @@ def prepare_polyu_data(src_path, dst_path, patch_size, rand_num_train=300):
         shutil.rmtree(dst_path_train)
     make_dir(dst_path_train)
 
-    file_path = glob.glob(src_path)
-    file_path.sort()
+    scene_paths = glob.glob(os.path.join(src_path, '*'))
+    scene_paths.sort()
     # prepare training data
     print('PolyU train data processing...')
-    for scene_num, file_name in enumerate(tqdm(file_path), 0):
-        if 'PolyU' in file_name:
-            noisy_paths = glob.glob(file_name + '/*.JPG')
-            gt_path = glob.glob(file_name + '/mean.png')
+    for scene_num, scene_path in enumerate(tqdm(scene_paths), 0):
+        scene_name = os.path.basename(scene_path)
+        noisy_paths = glob.glob(os.path.join(scene_path, '*.JPG'))
+        gt_path = os.path.join(scene_path, 'mean.png')
+        gt = np.array(cv2.imread(gt_path))
 
-            for img_num in range(len(noisy_paths)):
-                noisy = np.array(cv2.imread(noisy_paths[img_num]))
-                gt = np.array(cv2.imread(gt_path[img_num]))
-                img = np.concatenate([noisy, gt], 2)
-                [h, w, c] = img.shape
-                patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, random_crop=True,
-                                        rand_num_train=rand_num_train)
-                for patch_num in range(len(patch_list)):
-                    noisy_patch = patch_list[patch_num][:, :, 0:3]
-                    clean_patch = patch_list[patch_num][:, :, 3:6]
-                    img = np.concatenate([noisy_patch, clean_patch], 1)
-                    cv2.imwrite(os.path.join(dst_path_train,
-                                             'scene_{:03d}_img_{:03d}_patch_{:03d}.png'.format(scene_num + 1,
-                                                                                               img_num + 1,
-                                                                                               patch_num + 1)), img)
+        for img_num in range(len(noisy_paths)):
+            noisy = np.array(cv2.imread(noisy_paths[img_num]))
+            img = np.concatenate([noisy, gt], 2)
+            [h, w, c] = img.shape
+            patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, random_crop=True,
+                                    crop_num=rand_num_train)
+            for patch_num in range(len(patch_list)):
+                noisy_patch = patch_list[patch_num][:, :, 0:3]
+                clean_patch = patch_list[patch_num][:, :, 3:6]
+                img = np.concatenate([noisy_patch, clean_patch], 1)
+                cv2.imwrite(os.path.join(dst_path_train,
+                                         '{}_img_{:03d}_patch_{:03d}.png'.format(scene_name,
+                                                                                 img_num + 1,
+                                                                                 patch_num + 1)), img)
 
 
 def main():

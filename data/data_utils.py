@@ -21,7 +21,8 @@ def split(full_list, shuffle=False, ratio=0.2):
     return sublist_test, sublist_train
 
 
-def crop_patch(img, img_size=(512, 512), patch_size=(256, 256), stride=256, random_crop=False, crop_num=100, pos_list=[]):
+def crop_patch(img, img_size=(512, 512), patch_size=(256, 256), stride=256, random_crop=False, crop_num=100,
+               pos_list=[]):
     count = 0
     patch_list = []
     if random_crop:
@@ -39,3 +40,9 @@ def crop_patch(img, img_size=(512, 512), patch_size=(256, 256), stride=256, rand
         count += 1
 
     return patch_list
+
+
+def get_pos_list(txt_path):
+    pos_list = []
+
+    return pos_list
