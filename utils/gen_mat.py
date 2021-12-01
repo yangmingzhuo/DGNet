@@ -2,8 +2,8 @@ import os
 import numpy as np
 import torch
 import scipy.io as sio
-from util import *
-from checkpoint import *
+from utils.util import *
+from utils.checkpoint import *
 
 
 def gen_mat(model, pretrain_model, dst_path, data_loader, batch_size, patch_size, logger):

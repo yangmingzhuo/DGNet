@@ -80,7 +80,7 @@ def main():
     # training settings
     parser.add_argument('--nEpochs', type=int, default=200, help='number of epochs to train for')
     parser.add_argument('--lr', type=float, default=2e-4, help='learning rate. default=0.0002')
-    parser.add_argument('--lr_min', type=float, default=1e-6, help='minimum learning rate. default=0.000001')
+    parser.add_argument('--lr_min', type=float, default=1e-4, help='minimum learning rate. default=0.000001')
     parser.add_argument('--start_iter', type=int, default=1, help='starting epoch')
     parser.add_argument('--weight_decay', type=float, default=1e-8, help='weight_decay')
 
@@ -107,8 +107,8 @@ def main():
     epoch_best = 0
 
     # log setting
-    log_folder = os.path.join(opt.log_dir, "model_{}_gpu_{}_ds_{}_ps_{}_bs_{}_ep_{}_lr_{}_time_{}"
-                              .format(opt.model_type, opt.gpus, opt.data_set, opt.patch_size, opt.batch_size, opt.nEpochs, opt.lr, time.strftime("%Y-%m-%d", time.localtime())))
+    log_folder = os.path.join(opt.log_dir, "model_{}_gpu_{}_ds_{}_ps_{}_bs_{}_ep_{}_lr_{}_lr_min_{}_time_{}"
+                              .format(opt.model_type, opt.gpus, opt.data_set, opt.patch_size, opt.batch_size, opt.nEpochs, opt.lr, opt.lr_min, time.strftime("%Y-%m-%d", time.localtime())))
     output_process(log_folder, 'd')
     checkpoint_folder = make_dir(os.path.join(log_folder, 'checkpoint'))
     writer = SummaryWriter(log_folder)
