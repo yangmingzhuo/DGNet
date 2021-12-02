@@ -42,7 +42,7 @@ def crop_patch(img, img_size=(512, 512), patch_size=(256, 256), stride=256, rand
     return patch_list
 
 
-def get_pos_list(txt_path, max_num):
+def get_pos_list(txt_path, max_num=100):
     pos_list = []
     with open(txt_path, "r") as f:
         f.readline()

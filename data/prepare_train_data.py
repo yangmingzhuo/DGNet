@@ -90,30 +90,26 @@ def prepare_polyu_data(src_path, dst_path, patch_size, rand_num_train=300):
         shutil.rmtree(dst_path_train)
     make_dir(dst_path_train)
 
-    scene_paths = glob.glob(os.path.join(src_path, '*'))
-    scene_paths.sort()
     # prepare training data
     print('PolyU train data processing...')
-    for scene_num, scene_path in enumerate(tqdm(scene_paths), 0):
-        scene_name = os.path.basename(scene_path)
-        noisy_paths = glob.glob(os.path.join(scene_path, '*.JPG'))
-        gt_path = os.path.join(scene_path, 'mean.png')
-        gt = np.array(cv2.imread(gt_path))
+    noisy_paths = glob.glob(os.path.join(src_path, '*Real.JPG'))
+    noisy_paths.sort()
+    gt_paths = glob.glob(os.path.join(src_path, '*mean.JPG'))
+    gt_paths.sort()
 
-        for img_num in range(len(noisy_paths)):
-            noisy = np.array(cv2.imread(noisy_paths[img_num]))
-            img = np.concatenate([noisy, gt], 2)
-            [h, w, c] = img.shape
-            patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, random_crop=True,
-                                    crop_num=rand_num_train)
-            for patch_num in range(len(patch_list)):
-                noisy_patch = patch_list[patch_num][:, :, 0:3]
-                clean_patch = patch_list[patch_num][:, :, 3:6]
-                img = np.concatenate([noisy_patch, clean_patch], 1)
-                cv2.imwrite(os.path.join(dst_path_train,
-                                         '{}_img_{:03d}_patch_{:03d}.png'.format(scene_name,
-                                                                                 img_num + 1,
-                                                                                 patch_num + 1)), img)
+    for img_num, noisy_path in enumerate(tqdm(noisy_paths)):
+        noisy = np.array(cv2.imread(noisy_path))
+        gt = np.array(cv2.imread(gt_paths[img_num]))
+        img = np.concatenate([noisy, gt], 2)
+        [h, w, c] = img.shape
+        patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, random_crop=True,
+                                crop_num=rand_num_train)
+        for patch_num in range(len(patch_list)):
+            noisy_patch = patch_list[patch_num][:, :, 0:3]
+            clean_patch = patch_list[patch_num][:, :, 3:6]
+            img = np.concatenate([noisy_patch, clean_patch], 1)
+            cv2.imwrite(os.path.join(dst_path_train,
+                                     '{}_img_{:03d}_patch_{:03d}.png'.format(os.path.join(os.path.basename(noisy_path).replace('_Real.JPG', '')), img_num + 1, patch_num + 1)), img)
 
 
 def main():
@@ -136,8 +132,8 @@ def main():
     sidd_src_path_train = os.path.join(root_dir, 'sidd', 'train')
     renoir_src_path_train = os.path.join(root_dir, 'renoir', 'train')
     polyu_src_path_train = os.path.join(root_dir, 'polyu', 'train')
+    print("start...")
     if opt.data_set == 'sidd':
-        print("start...")
         print("start...SIDD...")
         prepare_sidd_data(sidd_src_path_train, opt.dst_dir, patch_size, opt.rand_num_train)
         print("end...SIDD")
