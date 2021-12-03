@@ -13,8 +13,8 @@
 #    --exp_id=0 &
 
 #polyu
-srun -p aipe --gres=gpu:2 --job-name='DGNet' -w SH-IDC2-172-20-21-216 \
-nohup python train_singleDataset.py \
-    --gpus=4,5 \
-    --data_set='polyu' \
-    --exp_id=0 &
+#srun -p aipe --gres=gpu:2 --job-name='DGNet' -w SH-IDC2-172-20-21-216 \
+#nohup python train_singleDataset.py \
+#    --gpus=4,5 \
+#    --data_set='polyu' \
+#    --exp_id=1 &

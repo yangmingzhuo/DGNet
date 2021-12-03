@@ -97,7 +97,7 @@ def prepare_polyu_data(src_path, dst_path, patch_size):
         [h, w, c] = img.shape
         patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, random_crop=False)
         random.shuffle(patch_list)
-        for patch_num in range(len(patch_list[:32])):
+        for patch_num in range(len(patch_list[:64])):
             noisy_patch = patch_list[patch_num][:, :, 0:3]
             clean_patch = patch_list[patch_num][:, :, 3:6]
             img = np.concatenate([noisy_patch, clean_patch], 1)

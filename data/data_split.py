@@ -70,56 +70,6 @@ def prepare_renoir_data(src_path, dst_path):
 
 
 def prepare_polyu_data(src_path, dst_path):
-    dst_path = make_dir(os.path.join(dst_path, 'polyu_old'))
-    dst_path_test = os.path.join(dst_path, 'test')
-    dst_path_train = os.path.join(dst_path, 'train')
-    if os.path.exists(dst_path_train):
-        shutil.rmtree(dst_path_train)
-    if os.path.exists(dst_path_test):
-        shutil.rmtree(dst_path_test)
-    make_dir(dst_path_test)
-    make_dir(dst_path_train)
-
-    print('PolyU train data processing...')
-    for scene_num, scene_path in enumerate(tqdm(polyu_train_list), 0):
-        noisy_paths = glob.glob(os.path.join(src_path, scene_path, '*.JPG'))
-        os.makedirs(os.path.join(dst_path_train, scene_path))
-        noisy_paths.sort()
-
-        # generate ground truth
-        gt = np.array(cv2.imread(noisy_paths[0])).astype(np.float32)
-        for i in range(1, len(noisy_paths)):
-            gt += np.array(cv2.imread(noisy_paths[i])).astype(np.float32)
-        gt = gt / len(noisy_paths)
-        gt = np.clip(gt, 0, 255).astype(np.uint8)
-        cv2.imwrite(os.path.join(dst_path_train, scene_path, 'mean.png'), gt)
-
-        # select 4 images
-        noisy_imgs = [noisy_paths[0], noisy_paths[33], noisy_paths[66], noisy_paths[99]]
-        for i in range(len(noisy_imgs)):
-            shutil.copy(noisy_imgs[i], os.path.join(dst_path_train, scene_path))
-
-    print('PolyU test data processing...')
-    for scene_num, scene_path in enumerate(tqdm(polyu_test_list), 0):
-        noisy_paths = glob.glob(os.path.join(src_path, scene_path) + '/*.JPG')
-        os.makedirs(os.path.join(dst_path_test, scene_path))
-        noisy_paths.sort()
-
-        # generate ground truth
-        gt = np.array(cv2.imread(noisy_paths[0])).astype(np.float32)
-        for i in range(1, len(noisy_paths)):
-            gt += np.array(cv2.imread(noisy_paths[i])).astype(np.float32)
-        gt = gt / len(noisy_paths)
-        gt = np.clip(gt, 0, 255).astype(np.uint8)
-        cv2.imwrite(os.path.join(dst_path_test, scene_path, 'mean.png'), gt)
-
-        # select 4 images
-        noisy_imgs = [noisy_paths[0], noisy_paths[33], noisy_paths[66], noisy_paths[99]]
-        for i in range(len(noisy_imgs)):
-            shutil.copy(noisy_imgs[i], os.path.join(dst_path_test, scene_path))
-
-
-def prepare_new_polyu_data(src_path, dst_path):
     dst_path = make_dir(os.path.join(dst_path, 'polyu'))
     dst_path_test = os.path.join(dst_path, 'test')
     dst_path_train = os.path.join(dst_path, 'train')
@@ -186,8 +136,7 @@ def main():
     elif opt.data_set == 'polyu':
         print("start...PolyU...")
         polyu_src_path = os.path.join(root_dir, 'PolyU')
-        # prepare_polyu_data(polyu_src_path, opt.dst_dir)
-        prepare_new_polyu_data(polyu_src_path, opt.dst_dir)
+        prepare_polyu_data(polyu_src_path, opt.dst_dir)
         print("end...PolyU")
     print('end')
 

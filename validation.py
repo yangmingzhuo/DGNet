@@ -14,7 +14,7 @@ from utils.checkpoint import *
 from utils.gen_mat import *
 
 
-def valid(opt, epoch, data_loader, model, logger, writer):
+def valid(data_loader, model, logger):
     t0 = time.time()
     model.eval()
     psnr_val = AverageMeter()
@@ -30,9 +30,8 @@ def valid(opt, epoch, data_loader, model, logger, writer):
         for i in range(prediction.shape[0]):
             psnr_val.update(compare_psnr(prediction[i, :, :, :], target[i, :, :, :], data_range=1.0), 1)
 
-    writer.add_scalar('Validation_PSNR', psnr_val.avg, epoch)
-    logger.info('||==> Validation epoch: [{:d}/{:d}]\tval_PSNR={:.4f}\tcost_time={:.4f}'
-                .format(epoch, opt.nEpochs, psnr_val.avg, time.time() - t0))
+    logger.info('||==> val_PSNR={:.4f}\tcost_time={:.4f}'
+                .format(psnr_val.avg, time.time() - t0))
     return psnr_val.avg
 
 
@@ -43,7 +42,7 @@ def main():
     parser.add_argument('--test_batch_size', type=int, default=32, help='testing batch size, default=1')
     parser.add_argument('--data_set', type=str, default='sidd', help='the exact dataset we want to train on')
     parser.add_argument('--pretrained', type=str,
-                        default='./logs/model_ELU_UNet_ds_sidd_bs_32_ps_128_ep_200_lr_0.0002_rd_True/checkpoint',
+                        default='/mnt/lustre/yangmingzhuo/DGNet/logs/11-30/model_ELU_UNet_gpu_3,4_ds_sidd_ps_128_bs_32_ep_200_lr_0.0002_lr_min_1e-06_time_2021-12-01/checkpoint',
                         help="Checkpoints directory,  (default:./checkpoints)")
 
     # global settings
@@ -69,8 +68,8 @@ def main():
     logger = get_logger(log_folder, 'DGNet_log')
 
     # load dataset
-    logger.info("Load data from: {}".format(opt.data_dir, 'random_processed', 'test', opt.data_set + '_patch_test'))
-    val_set = LoadDataset(src_path=os.path.join(opt.data_dir, 'random_processed', 'test', opt.data_set + '_patch_test'),
+    logger.info("Load data from: {}".format(opt.data_dir, 'processed', opt.data_set, 'test'))
+    val_set = LoadDataset(src_path=os.path.join(opt.data_dir, 'processed', opt.data_set, 'test'),
                           patch_size=opt.patch_size, train=False)
     val_data_loader = DataLoader(dataset=val_set, batch_size=opt.test_batch_size, shuffle=False,
                                  num_workers=opt.num_workers, pin_memory=True)
@@ -86,12 +85,13 @@ def main():
     model.cuda()
 
     # load pretrained model
-    logger.info("Load model from: {}".format(opt.pretrained))
-    model, psnr_best = load_single_model(opt.pretrain_model, model, logger)
+    pretrained_model = os.path.join(opt.pretrained, 'model_best.pth')
+    logger.info("Load model from: {}".format(pretrained_model))
+    model, psnr_best = load_single_model(pretrained_model, model, logger)
 
     valid(val_data_loader, model, logger)
-    dst_folder = make_dir(os.path.join(checkpoint_folder, opt.data_set))
-    gen_mat(ELD_UNet(), os.path.join(checkpoint_folder, "model_best.pth"), dst_folder, val_data_loader, logger)
+    # dst_folder = make_dir(os.path.join(opt.pretrained, opt.data_set))
+    # gen_mat(ELD_UNet(), os.path.join(checkpoint_folder, "model_best.pth"), dst_folder, val_data_loader, logger)
 
 if __name__ == '__main__':
     main()
