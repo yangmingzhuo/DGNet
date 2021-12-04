@@ -2,7 +2,7 @@ import os
 import glob
 import shutil
 
-file_list = ['droid,200,800,3200,6400',
+file_list1 = ['droid,200,800,3200,6400',
     'gnome,200,800,1600,6400',
     'Ottignies,200,640,3200,6400',
     'MuseeL-turtle,200,800,1250,6400',
@@ -80,8 +80,9 @@ file_list = ['droid,200,800,3200,6400',
     'MVB-LouveFire,200,200-2,400,800,1600,3200,6400,6400-2,H1,H2',
     'MVB-Bombardement,200,200-2,320,800,5000,6400,H1,H2,H3',
     'beads,200,500,1000,3200,6400',
-    'shells,200,200-2,250,320,1000,1600,2500,3200,5000,6400,H1,H2,H3',
-    'soap,200,200-2,400,800,3200,6400,H1,H2,H3,H4',
+    'shells,200,200-2,250,320,1000,1600,2500,3200,5000,6400,H1,H2,H3']
+
+file_list2 = ['soap,200,200-2,400,800,3200,6400,H1,H2,H3,H4',
     'kibbles,200,200-2,800,5000,6400,H1,H2,H3',
     'bertrixtree,200,400,640,2500,4000,6400,H1',
     'BruegelLibraryS1,200,400,1000,2500,3200,5000,6400,H1,H2',
@@ -92,7 +93,9 @@ file_list = ['droid,200,800,3200,6400',
     'partiallyeatenbanana,200,640,1250,2500,4000,5000,6400,H1,H2,H3',
     'corkboard,200,320,1000,2500,5000,6400,H1,H2,H3',
     'fireextinguisher,200,200-2,200-3,800,3200,6400,H1,H2,H3',
-    'colorscreen,200,201,202,400,1000,3200,6400,H1',
+    'colorscreen,200,201,202,400,1000,3200,6400,H1']
+
+file_list3 = [
     'MuseeL-Bobo-C500D,100,200,400,800,1600,3200,H1',
     'MuseeL-yombe-C500D,100,400,800,1600,3200,H1',
     'MuseeL-sol-C500D,100,200,400,800,3200,H1',
@@ -107,10 +110,10 @@ file_list = ['droid,200,800,3200,6400',
 
 src_path = '/home/SENSETIME/yangmingzhuo/Documents/ECCV/Dataset/NIND/'
 num = 0
-for imgs in file_list:
+for imgs in file_list1:
     scene_name = imgs.split(',')[0]
     iso_list = imgs.split(',')[1:]
-    dst_path = os.path.join(src_path, 'pre', scene_name)
+    dst_path = os.path.join(src_path, 'pre', 'XT1_8bit', scene_name)
     if not os.path.exists(dst_path):
         os.makedirs(dst_path)
     for iso in iso_list:
@@ -118,6 +121,31 @@ for imgs in file_list:
         print(scene_name, iso, file_list)
         shutil.copy(file_list[0], dst_path)
         num += 1
+
+for imgs in file_list2:
+    scene_name = imgs.split(',')[0]
+    iso_list = imgs.split(',')[1:]
+    dst_path = os.path.join(src_path, 'pre', 'XT1_16bit', scene_name)
+    if not os.path.exists(dst_path):
+        os.makedirs(dst_path)
+    for iso in iso_list:
+        file_list = glob.glob(os.path.join(src_path, 'NIND_' + scene_name + '_ISO' + iso + '.*'))
+        print(scene_name, iso, file_list)
+        shutil.copy(file_list[0], dst_path)
+        num += 1
+
+for imgs in file_list3:
+    scene_name = imgs.split(',')[0]
+    iso_list = imgs.split(',')[1:]
+    dst_path = os.path.join(src_path, 'pre', 'C500D_8bit', scene_name)
+    if not os.path.exists(dst_path):
+        os.makedirs(dst_path)
+    for iso in iso_list:
+        file_list = glob.glob(os.path.join(src_path, 'NIND_' + scene_name + '_ISO' + iso + '.*'))
+        print(scene_name, iso, file_list)
+        shutil.copy(file_list[0], dst_path)
+        num += 1
+
 print(num)
 
 

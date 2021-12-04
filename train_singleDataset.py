@@ -78,9 +78,9 @@ def main():
     parser.add_argument('--test_patch_size', type=int, default=256, help='testing batch size, default=1')
 
     # training settings
-    parser.add_argument('--nEpochs', type=int, default=200, help='number of epochs to train for')
+    parser.add_argument('--nEpochs', type=int, default=150, help='number of epochs to train for')
     parser.add_argument('--lr', type=float, default=2e-4, help='learning rate. default=0.0002')
-    parser.add_argument('--lr_min', type=float, default=1e-6, help='minimum learning rate. default=0.000001')
+    parser.add_argument('--lr_min', type=float, default=1e-5, help='minimum learning rate. default=0.000001')
     parser.add_argument('--start_iter', type=int, default=1, help='starting epoch')
     parser.add_argument('--weight_decay', type=float, default=1e-8, help='weight_decay')
 
@@ -90,7 +90,7 @@ def main():
 
     # general settings
     parser.add_argument('--gpus', default='1', type=str, help='id of gpus')
-    parser.add_argument('--log_dir', default='./logs/', help='Location to save checkpoint models')
+    parser.add_argument('--log_dir', default='./logs_v2/', help='Location to save checkpoint models')
     parser.add_argument('--seed', type=int, default=0, help='random seed to use. Default=0')
     parser.add_argument('--num_workers', type=int, default=8, help='number of workers')
     parser.add_argument('--print_freq', type=int, default=10, help='print freq')

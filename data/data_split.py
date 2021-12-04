@@ -106,12 +106,41 @@ def prepare_polyu_data(src_path, dst_path):
         shutil.copy(scene_gt_path, os.path.join(dst_path_test, scene_name))
 
 
+def prepare_nind_data(src_path, dst_path):
+    dst_path = make_dir(os.path.join(dst_path, 'renoir'))
+    dst_path_test = os.path.join(dst_path, 'test')
+    dst_path_train = os.path.join(dst_path, 'train')
+    if os.path.exists(dst_path_train):
+        shutil.rmtree(dst_path_train)
+    if os.path.exists(dst_path_test):
+        shutil.rmtree(dst_path_test)
+    make_dir(dst_path_test)
+    make_dir(dst_path_train)
+
+    for camera, camera_path in enumerate(src_path, 0):
+        scene_paths = os.listdir(camera_path)
+        dst_camera_name = os.path.basename(camera_path)
+
+        # divide the train and test data in random
+        scene_path_test, scene_path_train = split(scene_paths)
+
+        # prepare training data
+        print('RENOIR train data processing...')
+        for scene_num, src_scene_name in enumerate(tqdm(scene_path_train), 0):
+            shutil.copytree(os.path.join(camera_path, src_scene_name), os.path.join(dst_path_train, str(dst_camera_name) + '_' + str(src_scene_name)))
+
+        # prepare testing data
+        print('RENOIR test data processing...')
+        for scene_num, src_scene_name in enumerate(tqdm(scene_path_test), 0):
+            shutil.copytree(os.path.join(camera_path, src_scene_name), os.path.join(dst_path_test, str(dst_camera_name) + '_' + str(src_scene_name)))
+
+
 def main():
     parser = argparse.ArgumentParser(description='PyTorch data split')
     parser.add_argument('--data_set', type=str, default='sidd', help='the dataset to crop')
-    parser.add_argument('--data_set_dir', type=str, default='/mnt/lustre/share/yangmingzhuo/dataset/',
+    parser.add_argument('--data_set_dir', type=str, default='/home/SENSETIME/yangmingzhuo/Documents/ECCV/Dataset/',
                         help='the dataset dir')
-    parser.add_argument('--dst_dir', type=str, default='/mnt/lustre/share/yangmingzhuo/split_dataset/',
+    parser.add_argument('--dst_dir', type=str, default='/home/SENSETIME/yangmingzhuo/Documents/ECCV/Dataset/',
                         help='the destination dir')
     parser.add_argument('--seed', type=int, default=0, help='random seed to use default=0')
     opt = parser.parse_args()
@@ -138,6 +167,11 @@ def main():
         polyu_src_path = os.path.join(root_dir, 'PolyU')
         prepare_polyu_data(polyu_src_path, opt.dst_dir)
         print("end...PolyU")
+    elif opt.data_set == 'nind':
+        print("start...NIND...")
+        polyu_src_path = os.path.join(root_dir, 'NIND')
+        prepare_polyu_data(polyu_src_path, opt.dst_dir)
+        print("end...NIND")
     print('end')
 
 
