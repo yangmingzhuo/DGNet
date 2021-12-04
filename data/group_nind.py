@@ -1,8 +1,11 @@
 import os
 import glob
 import shutil
+import cv2
+from PIL import Image
+import numpy as np
 
-file_list1 = ['droid,200,800,3200,6400',
+XT1_8bit_list = ['droid,200,800,3200,6400',
     'gnome,200,800,1600,6400',
     'Ottignies,200,640,3200,6400',
     'MuseeL-turtle,200,800,1250,6400',
@@ -82,7 +85,7 @@ file_list1 = ['droid,200,800,3200,6400',
     'beads,200,500,1000,3200,6400',
     'shells,200,200-2,250,320,1000,1600,2500,3200,5000,6400,H1,H2,H3']
 
-file_list2 = ['soap,200,200-2,400,800,3200,6400,H1,H2,H3,H4',
+XT1_16bit_list = ['soap,200,200-2,400,800,3200,6400,H1,H2,H3,H4',
     'kibbles,200,200-2,800,5000,6400,H1,H2,H3',
     'bertrixtree,200,400,640,2500,4000,6400,H1',
     'BruegelLibraryS1,200,400,1000,2500,3200,5000,6400,H1,H2',
@@ -95,7 +98,7 @@ file_list2 = ['soap,200,200-2,400,800,3200,6400,H1,H2,H3,H4',
     'fireextinguisher,200,200-2,200-3,800,3200,6400,H1,H2,H3',
     'colorscreen,200,201,202,400,1000,3200,6400,H1']
 
-file_list3 = [
+C500D_8bit_list = [
     'MuseeL-Bobo-C500D,100,200,400,800,1600,3200,H1',
     'MuseeL-yombe-C500D,100,400,800,1600,3200,H1',
     'MuseeL-sol-C500D,100,200,400,800,3200,H1',
@@ -110,41 +113,69 @@ file_list3 = [
 
 src_path = '/home/SENSETIME/yangmingzhuo/Documents/ECCV/Dataset/NIND/'
 num = 0
-for imgs in file_list1:
+for imgs in XT1_8bit_list:
     scene_name = imgs.split(',')[0]
     iso_list = imgs.split(',')[1:]
     dst_path = os.path.join(src_path, 'pre', 'XT1_8bit', scene_name)
     if not os.path.exists(dst_path):
         os.makedirs(dst_path)
     for iso in iso_list:
-        file_list = glob.glob(os.path.join(src_path, 'NIND_' + scene_name + '_ISO' + iso + '.*'))
+        if iso == '200':
+            file_list = glob.glob(os.path.join(src_path, 'NIND_' + scene_name + '_ISO' + iso + '.jpg'))
+            gt = np.array(cv2.imread(file_list[0])).astype(np.float32)
+        elif iso == '200-2':
+            file_list = glob.glob(os.path.join(src_path, 'NIND_' + scene_name + '_ISO' + iso + '.jpg'))
+            gt = (gt + np.array(cv2.imread(file_list[0])).astype(np.float32))/2
+        else:
+            file_list = glob.glob(os.path.join(src_path, 'NIND_' + scene_name + '_ISO' + iso + '.jpg'))
+            shutil.copy(file_list[0], dst_path)
         print(scene_name, iso, file_list)
-        shutil.copy(file_list[0], dst_path)
         num += 1
+    gt = np.clip(gt, 0, 255).astype(np.uint8)
+    cv2.imwrite(os.path.join(dst_path, 'NIND_' + scene_name + '_gt.png'), gt)
 
-for imgs in file_list2:
+for imgs in XT1_16bit_list:
     scene_name = imgs.split(',')[0]
     iso_list = imgs.split(',')[1:]
     dst_path = os.path.join(src_path, 'pre', 'XT1_16bit', scene_name)
     if not os.path.exists(dst_path):
         os.makedirs(dst_path)
     for iso in iso_list:
-        file_list = glob.glob(os.path.join(src_path, 'NIND_' + scene_name + '_ISO' + iso + '.*'))
+        if iso == '200':
+            file_list = glob.glob(os.path.join(src_path, 'NIND_' + scene_name + '_ISO' + iso + '.png'))
+            gt = np.array(cv2.imread(file_list[0])).astype(np.float32)
+        elif iso == '200-2':
+            file_list = glob.glob(os.path.join(src_path, 'NIND_' + scene_name + '_ISO' + iso + '.png'))
+            gt = (gt + np.array(cv2.imread(file_list[0])).astype(np.float32)) / 2
+        else:
+            file_list = glob.glob(os.path.join(src_path, 'NIND_' + scene_name + '_ISO' + iso + '.png'))
+            shutil.copy(file_list[0], dst_path)
         print(scene_name, iso, file_list)
-        shutil.copy(file_list[0], dst_path)
         num += 1
+    gt = np.clip(gt, 0, 255).astype(np.uint8)
+    cv2.imwrite(os.path.join(dst_path, 'NIND_' + scene_name + '_gt.png'), gt)
 
-for imgs in file_list3:
+for imgs in C500D_8bit_list:
     scene_name = imgs.split(',')[0]
     iso_list = imgs.split(',')[1:]
     dst_path = os.path.join(src_path, 'pre', 'C500D_8bit', scene_name)
     if not os.path.exists(dst_path):
         os.makedirs(dst_path)
     for iso in iso_list:
-        file_list = glob.glob(os.path.join(src_path, 'NIND_' + scene_name + '_ISO' + iso + '.*'))
+        if iso == '100':
+            file_list = glob.glob(os.path.join(src_path, 'NIND_' + scene_name + '_ISO' + iso + '.jpg'))
+            gt = np.array(cv2.imread(file_list[0])).astype(np.float32)
+        elif iso == '100-2':
+            file_list = glob.glob(os.path.join(src_path, 'NIND_' + scene_name + '_ISO' + iso + '.jpg'))
+            gt = (gt + np.array(cv2.imread(file_list[0])).astype(np.float32)) / 2
+        else:
+            file_list = glob.glob(os.path.join(src_path, 'NIND_' + scene_name + '_ISO' + iso + '.jpg'))
+            shutil.copy(file_list[0], dst_path)
         print(scene_name, iso, file_list)
-        shutil.copy(file_list[0], dst_path)
         num += 1
+    gt = np.clip(gt, 0, 255).astype(np.uint8)
+    cv2.imwrite(os.path.join(dst_path, 'NIND_' + scene_name + '_gt.png'), gt)
+
 
 print(num)
 

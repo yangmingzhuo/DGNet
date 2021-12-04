@@ -97,13 +97,46 @@ def prepare_polyu_data(src_path, dst_path, patch_size):
         [h, w, c] = img.shape
         patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, random_crop=False)
         random.shuffle(patch_list)
-        for patch_num in range(len(patch_list[:64])):
+        for patch_num in range(len(patch_list[:32])):
             noisy_patch = patch_list[patch_num][:, :, 0:3]
             clean_patch = patch_list[patch_num][:, :, 3:6]
             img = np.concatenate([noisy_patch, clean_patch], 1)
             cv2.imwrite(os.path.join(dst_path_test, ' {}_img_{:03d}_patch_{:03d}.png'.format(
                 os.path.join(os.path.basename(noisy_path).replace('_Real.JPG', '')),
                 img_num + 1, patch_num + 1)), img)
+
+def prepare_nind_data(src_path, dst_path, patch_size):
+    dst_path = make_dir(os.path.join(dst_path, 'nind'))
+    dst_path_test = os.path.join(dst_path, 'test')
+    if os.path.exists(dst_path_test):
+        shutil.rmtree(dst_path_test)
+    make_dir(dst_path_test)
+
+    scene_paths = glob.glob(os.path.join(src_path, '*'))
+    scene_paths.sort()
+    # prepare testing data
+    print('NIND test data processing...')
+    for scene_num, scene_path in enumerate(tqdm(scene_paths), 0):
+        scene_name = os.path.basename(scene_path)
+        gt_path = glob.glob(os.path.join(scene_path, '*gt.png'))
+        noisy_paths = glob.glob(os.path.join(scene_path, '*ISO*'))
+        noisy_paths.sort()
+        gt = cv2.imread(gt_path[0])
+        # pos_list = get_pos_list(os.path.join(scene_path, 'patch_list.txt'))
+        for img_num in range(len(noisy_paths)):
+            noisy = np.array(cv2.imread(noisy_paths[img_num]))
+            img = np.concatenate([noisy, gt], 2)
+            [h, w, c] = img.shape
+            patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, random_crop=False)
+            random.shuffle(patch_list)
+            for patch_num in range(len(patch_list[:32])):
+                noisy_patch = patch_list[patch_num][:, :, 0:3]
+                clean_patch = patch_list[patch_num][:, :, 3:6]
+                img = np.concatenate([noisy_patch, clean_patch], 1)
+                cv2.imwrite(os.path.join(dst_path_test,
+                                         '{}_img_{:03d}_patch_{:03d}.png'.format(scene_name,
+                                                                                 img_num + 1,
+                                                                                 patch_num + 1)), img)
 
 
 def main():
@@ -121,22 +154,27 @@ def main():
     patch_size = opt.patch_size
 
     root_dir = opt.src_dir
-    sidd_src_path_test = os.path.join(root_dir, 'sidd', 'test')
-    renoir_src_path_test = os.path.join(root_dir, 'renoir', 'test')
-    polyu_src_path_test = os.path.join(root_dir, 'polyu', 'test')
     if opt.data_set == 'sidd':
         print("start...")
         print("start...SIDD...")
+        sidd_src_path_test = os.path.join(root_dir, 'sidd', 'test')
         prepare_sidd_data(sidd_src_path_test, opt.dst_dir, patch_size)
         print("end...SIDD")
     elif opt.data_set == 'renoir':
         print("start...RENOIR...")
+        renoir_src_path_test = os.path.join(root_dir, 'renoir', 'test')
         prepare_renoir_data(renoir_src_path_test, opt.dst_dir, patch_size)
         print("end...RENOIR")
     elif opt.data_set == 'polyu':
         print("start...PolyU...")
+        polyu_src_path_test = os.path.join(root_dir, 'polyu', 'test')
         prepare_polyu_data(polyu_src_path_test, opt.dst_dir, patch_size)
         print("end...PolyU")
+    elif opt.data_set == 'polyu':
+        print("start...NIND...")
+        nind_src_path_test = os.path.join(root_dir, 'nind', 'test')
+        prepare_nind_data(nind_src_path_test, opt.dst_dir, patch_size)
+        print("end...NIND")
     print('end')
 
 
