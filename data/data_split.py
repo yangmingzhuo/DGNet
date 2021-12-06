@@ -80,7 +80,6 @@ def prepare_polyu_data(src_path, dst_path):
     make_dir(dst_path_test)
     make_dir(dst_path_train)
 
-    print('PolyU train data processing...')
     real_file_paths = glob.glob(os.path.join(src_path, '*Real.JPG'))
     real_file_paths.sort()
 
@@ -134,6 +133,47 @@ def prepare_nind_data(src_path, dst_path):
             shutil.copytree(os.path.join(camera_path, src_scene_name), os.path.join(dst_path_test, str(dst_camera_name) + '_' + str(src_scene_name)))
 
 
+def prepare_rid2021_data(src_path, dst_path):
+    dst_path = make_dir(os.path.join(dst_path, 'rid2021'))
+    dst_path_test = os.path.join(dst_path, 'test')
+    dst_path_train = os.path.join(dst_path, 'train')
+    if os.path.exists(dst_path_train):
+        shutil.rmtree(dst_path_train)
+    if os.path.exists(dst_path_test):
+        shutil.rmtree(dst_path_test)
+    make_dir(dst_path_test)
+    make_dir(dst_path_train)
+
+    real_file_paths = glob.glob(os.path.join(src_path, 'original', '*.jpeg'))
+    real_file_paths.sort()
+
+    # divide the train and test data in random
+    scene_paths_test, scene_paths_train = split(real_file_paths, shuffle=True)
+
+    # prepare training data
+    print('RID2021 train data processing...')
+    for scene_num, scene_path in enumerate(tqdm(scene_paths_train), 0):
+        scene_name = os.path.basename(scene_path)
+        name = scene_name.split('.')[0]
+        shutil.copy(scene_path, os.path.join(dst_path_train, name + '_noisy.jpeg'))
+        scene_gt_path = os.path.join(scene_path.replace('original', 'denoised'))
+        scene_name = os.path.basename(scene_gt_path)
+        name = scene_name.split('.')[0]
+        shutil.copy(scene_gt_path, os.path.join(dst_path_train, name + '_gt.jpeg'))
+
+    # prepare testing data
+    print('RID2021 test data processing...')
+    for scene_num, scene_path in enumerate(tqdm(scene_paths_test), 0):
+        scene_name = os.path.basename(scene_path)
+        name = scene_name.split('.')[0]
+        shutil.copy(scene_path, os.path.join(dst_path_test, name + '_noisy.jpeg'))
+        scene_gt_path = os.path.join(scene_path.replace('original', 'denoised'))
+        scene_name = os.path.basename(scene_gt_path)
+        name = scene_name.split('.')[0]
+        shutil.copy(scene_gt_path, os.path.join(dst_path_test, name + '_gt.jpeg'))
+
+
+
 def main():
     parser = argparse.ArgumentParser(description='PyTorch data split')
     parser.add_argument('--data_set', type=str, default='sidd', help='the dataset to crop')
@@ -173,6 +213,11 @@ def main():
                                 os.path.join(root_dir, 'NIND', 'XT1_16bit'), ]
         prepare_nind_data(nind_src_path_list, opt.dst_dir)
         print("end...NIND")
+    elif opt.data_set == 'rid2021':
+        print("start...RID2021...")
+        rid2021_src_path = os.path.join(root_dir, 'RID2021')
+        prepare_rid2021_data(rid2021_src_path, opt.dst_dir)
+        print("end...RID2021")
     print('end')
 
 

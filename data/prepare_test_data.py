@@ -139,6 +139,35 @@ def prepare_nind_data(src_path, dst_path, patch_size):
                                                                                  patch_num + 1)), img)
 
 
+def prepare_rid2021_data(src_path, dst_path, patch_size):
+    dst_path = make_dir(os.path.join(dst_path, 'rid2021'))
+    dst_path_test = os.path.join(dst_path, 'test')
+    if os.path.exists(dst_path_test):
+        shutil.rmtree(dst_path_test)
+    make_dir(dst_path_test)
+
+    # prepare training data
+    print('RID2021 test data processing...')
+    noisy_paths = glob.glob(os.path.join(src_path, '*_noisy.jpeg'))
+    noisy_paths.sort()
+    gt_paths = glob.glob(os.path.join(src_path, '*_gt.jpeg'))
+    gt_paths.sort()
+    # pos_list = get_pos_list(os.path.join(scene_path, 'patch_list.txt'))
+    for img_num, noisy_path in enumerate(tqdm(noisy_paths)):
+        noisy = np.array(cv2.imread(noisy_path))
+        gt = np.array(cv2.imread(gt_paths[img_num]))
+        img = np.concatenate([noisy, gt], 2)
+        [h, w, c] = img.shape
+        patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, random_crop=False)
+        random.shuffle(patch_list)
+        for patch_num in range(len(patch_list[:32])):
+            noisy_patch = patch_list[patch_num][:, :, 0:3]
+            clean_patch = patch_list[patch_num][:, :, 3:6]
+            img = np.concatenate([noisy_patch, clean_patch], 1)
+            cv2.imwrite(os.path.join(dst_path_test,
+                                     '{}_img_{:03d}_patch_{:03d}.png'.format(os.path.join(os.path.basename(noisy_path).replace('_noisy.jpeg', '')), img_num + 1, patch_num + 1)), img)
+
+
 def main():
     parser = argparse.ArgumentParser(description='PyTorch prepare test data')
     parser.add_argument('--patch_size', type=int, default=256, help='size of cropped image')
@@ -175,6 +204,11 @@ def main():
         nind_src_path_test = os.path.join(root_dir, 'nind', 'test')
         prepare_nind_data(nind_src_path_test, opt.dst_dir, patch_size)
         print("end...NIND")
+    elif opt.data_set == 'rid2021':
+        print("start...RID2021...")
+        nind_src_path_test = os.path.join(root_dir, 'rid2021', 'test')
+        prepare_rid2021_data(nind_src_path_test, opt.dst_dir, patch_size)
+        print("end...RID2021")
     print('end')
 
 

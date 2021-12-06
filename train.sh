@@ -3,6 +3,7 @@
 #nohup python train_singleDataset.py \
 #    --gpus=0,1 \
 #    --data_set='sidd' \
+#    --nEpochs=1 \
 #    --exp_id=0 &
 
 #renoir

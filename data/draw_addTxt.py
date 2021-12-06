@@ -102,13 +102,21 @@ if __name__ == "__main__":
     #     draw_addTxt(ref_imgs[0])
     #     print('#' * 40)
 
-    file_path = glob.glob('/home/SENSETIME/yangmingzhuo/Documents/ECCV/split_dataset/nind/test/' + '*')
+    # file_path = glob.glob('/home/SENSETIME/yangmingzhuo/Documents/ECCV/split_dataset/nind/test/' + '*')
+    # # prepare training data
+    # print('nind test data processing...')
+    # print(file_path)
+    # for scene_num, file_name in enumerate(file_path, 0):
+    #     ref_imgs = glob.glob(os.path.join(file_name, '*_gt.png'))
+    #     draw_addTxt(ref_imgs[0])
+    #     print('#' * 40)
+
+    file_path = glob.glob('/home/SENSETIME/yangmingzhuo/Documents/ECCV/split_dataset/rid2021/test/' + '*_gt.jpeg')
     # prepare training data
     print('nind test data processing...')
     print(file_path)
     for scene_num, file_name in enumerate(file_path, 0):
-        ref_imgs = glob.glob(os.path.join(file_name, '*_gt.png'))
-        draw_addTxt(ref_imgs[0])
+        draw_addTxt(file_name, txt_name=os.path.basename(file_name) + 'patch_list.txt')
         print('#' * 40)
 
     # print("Draw and add txt Successfully!")

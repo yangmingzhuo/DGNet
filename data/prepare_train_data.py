@@ -145,6 +145,36 @@ def prepare_nind_data(src_path, dst_path, patch_size, rand_num_train=300):
                                                                                  patch_num + 1)), img)
 
 
+def prepare_rid2021_data(src_path, dst_path, patch_size, rand_num_train=300):
+    dst_path = make_dir(os.path.join(dst_path, 'rid2021'))
+    dst_path_train = os.path.join(dst_path, 'train')
+    if os.path.exists(dst_path_train):
+        shutil.rmtree(dst_path_train)
+    make_dir(dst_path_train)
+
+    # prepare training data
+    print('RID2021 train data processing...')
+    noisy_paths = glob.glob(os.path.join(src_path, '*_noisy.jpeg'))
+    noisy_paths.sort()
+    gt_paths = glob.glob(os.path.join(src_path, '*_gt.jpeg'))
+    gt_paths.sort()
+
+    for img_num, noisy_path in enumerate(tqdm(noisy_paths)):
+        noisy = np.array(cv2.imread(noisy_path))
+        gt = np.array(cv2.imread(gt_paths[img_num]))
+        img = np.concatenate([noisy, gt], 2)
+        [h, w, c] = img.shape
+        patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, random_crop=True,
+                                crop_num=rand_num_train)
+        for patch_num in range(len(patch_list)):
+            noisy_patch = patch_list[patch_num][:, :, 0:3]
+            clean_patch = patch_list[patch_num][:, :, 3:6]
+            img = np.concatenate([noisy_patch, clean_patch], 1)
+            cv2.imwrite(os.path.join(dst_path_train,
+                                     '{}_img_{:03d}_patch_{:03d}.png'.format(os.path.join(os.path.basename(noisy_path).replace('_noisy.jpeg', '')), img_num + 1, patch_num + 1)), img)
+
+
+
 def main():
     parser = argparse.ArgumentParser(description='PyTorch prepare train data')
     parser.add_argument('--patch_size', type=int, default=256, help='size of cropped image')
@@ -183,6 +213,11 @@ def main():
         nind_src_path_train = os.path.join(root_dir, 'nind', 'train')
         prepare_nind_data(nind_src_path_train, opt.dst_dir, patch_size, opt.rand_num_train)
         print("end...NIND")
+    elif opt.data_set == 'rid2021':
+        print("start...RID2021...")
+        nind_src_path_train = os.path.join(root_dir, 'rid2021', 'train')
+        prepare_rid2021_data(nind_src_path_train, opt.dst_dir, patch_size, opt.rand_num_train)
+        print("end...RID2021")
     print('end')
 
 

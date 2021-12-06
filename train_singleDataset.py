@@ -110,8 +110,9 @@ def main():
     # log setting
     log_folder = os.path.join(opt.log_dir, "model_{}_gpu_{}_ds_{}_ps_{}_bs_{}_ep_{}_lr_{}_lr_min_{}_exp_id_{}"
                               .format(opt.model_type, opt.gpus, opt.data_set, opt.patch_size, opt.batch_size, opt.nEpochs, opt.lr, opt.lr_min, opt.exp_id))
-    output_process(log_folder, 'd')
-    checkpoint_folder = make_dir(os.path.join(log_folder, 'checkpoint'))
+    if opt.pretrain_model == '':
+        output_process(log_folder, 'd')
+        checkpoint_folder = make_dir(os.path.join(log_folder, 'checkpoint'))
     writer = SummaryWriter(log_folder)
     logger = get_logger(log_folder, 'DGNet_log')
     logger.info(opt)

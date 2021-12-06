@@ -27,6 +27,6 @@ def gen_mat(model, pretrain_model, dst_path, data_loader, batch_size, patch_size
 
     store_data_clean.resize((num, patch_size, patch_size, 3))
     store_data_prediction.resize((num, patch_size, patch_size, 3))
-    sio.savemat(os.path.join(dst_path, 'denoised.evaluate_mat'), {"denoised": store_data_prediction})
-    sio.savemat(os.path.join(dst_path, 'clean.evaluate_mat'), {"clean": store_data_clean})
+    sio.savemat(os.path.join(dst_path, 'denoised_evaluate_mat'), {"denoised": store_data_prediction})
+    sio.savemat(os.path.join(dst_path, 'clean_evaluate_mat'), {"clean": store_data_clean})
     logger.info('Mat with best model and {} patches generated!'.format(num))
