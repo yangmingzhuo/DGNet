@@ -152,13 +152,13 @@ def prepare_rid2021_data(src_path, dst_path, patch_size):
     noisy_paths.sort()
     gt_paths = glob.glob(os.path.join(src_path, '*_gt.jpeg'))
     gt_paths.sort()
-    # pos_list = get_pos_list(os.path.join(scene_path, 'patch_list.txt'))
     for img_num, noisy_path in enumerate(tqdm(noisy_paths)):
         noisy = np.array(cv2.imread(noisy_path))
-        gt = np.array(cv2.imread(gt_paths[img_num]))
+        gt = np.array(cv2.imread(noisy_path.replace('_noisy.jpeg', '_gt.jpeg')))
+        pos_list = get_pos_list(noisy_path.replace('_noisy.jpeg', '_gt.jpegpatch_list.txt'))
         img = np.concatenate([noisy, gt], 2)
         [h, w, c] = img.shape
-        patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, random_crop=False)
+        patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, random_crop=False, pos_list=pos_list)
         random.shuffle(patch_list)
         for patch_num in range(len(patch_list[:32])):
             noisy_patch = patch_list[patch_num][:, :, 0:3]

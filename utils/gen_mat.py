@@ -17,7 +17,7 @@ def gen_mat(model, pretrain_model, dst_path, data_loader, batch_size, patch_size
     for iteration, (noisy, target) in enumerate(data_loader):
         noisy, target = noisy.cuda(), target.cuda()
         with torch.no_grad():
-            prediction = model(noisy)
+            prediction = torch.clamp(model(noisy), 0.0, 1.0)
             prediction = prediction.data.cpu().permute(0, 2, 3, 1).numpy().astype(np.float32)
             target = target.data.cpu().permute(0, 2, 3, 1).numpy().astype(np.float32)
             for i in range(prediction.shape[0]):

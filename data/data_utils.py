@@ -42,7 +42,7 @@ def crop_patch(img, img_size=(512, 512), patch_size=(256, 256), stride=256, rand
     return patch_list
 
 
-def get_pos_list(txt_path, max_num=100):
+def get_pos_list(txt_path, max_num=999):
     pos_list = []
     with open(txt_path, "r") as f:
         f.readline()
@@ -50,7 +50,7 @@ def get_pos_list(txt_path, max_num=100):
             line = f.readline()
             if line:
                 line_data = line.split('\t')
-                pos = (line_data[0], line_data[1])
+                pos = (int(line_data[0]), int(line_data[1]))
                 pos_list.append(pos)
             else:
                 break

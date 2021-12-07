@@ -67,11 +67,13 @@ def valid(opt, epoch, data_loader, model, criterion, logger, writer):
                 .format(epoch, opt.nEpochs, psnr_val.avg, loss_val.avg, time.time() - t0))
     return psnr_val.avg
 
+
 def main():
     parser = argparse.ArgumentParser(description='PyTorch image denoising')
     # dataset settings
     parser.add_argument('--data_set', type=str, default='sidd', help='the exact dataset we want to train on')
-    parser.add_argument('--data_dir', type=str, default='/mnt/lustre/share/yangmingzhuo/processed', help='the dataset dir')
+    parser.add_argument('--data_dir', type=str, default='/mnt/lustre/share/yangmingzhuo/processed',
+                        help='the dataset dir')
     parser.add_argument('--batch_size', type=int, default=32, help='training batch size: 32')
     parser.add_argument('--patch_size', type=int, default=128, help='Size of cropped HR image')
     parser.add_argument('--test_batch_size', type=int, default=32, help='testing batch size, default=1')
@@ -109,7 +111,8 @@ def main():
 
     # log setting
     log_folder = os.path.join(opt.log_dir, "model_{}_gpu_{}_ds_{}_ps_{}_bs_{}_ep_{}_lr_{}_lr_min_{}_exp_id_{}"
-                              .format(opt.model_type, opt.gpus, opt.data_set, opt.patch_size, opt.batch_size, opt.nEpochs, opt.lr, opt.lr_min, opt.exp_id))
+                              .format(opt.model_type, opt.gpus, opt.data_set, opt.patch_size, opt.batch_size,
+                                      opt.nEpochs, opt.lr, opt.lr_min, opt.exp_id))
     if opt.pretrain_model == '':
         output_process(log_folder, 'd')
         checkpoint_folder = make_dir(os.path.join(log_folder, 'checkpoint'))
@@ -120,11 +123,13 @@ def main():
     # load dataset
     logger.info('Loading datasets {}, Batch Size: {}, Patch Size: {}'.format(opt.data_set,
                                                                              opt.batch_size, opt.patch_size))
-    train_set = LoadDataset(src_path=os.path.join(opt.data_dir, opt.data_set, 'train'), patch_size=opt.patch_size, train=True)
+    train_set = LoadDataset(src_path=os.path.join(opt.data_dir, opt.data_set, 'train'), patch_size=opt.patch_size,
+                            train=True)
     train_data_loader = DataLoader(dataset=train_set, batch_size=opt.batch_size, shuffle=True,
                                    num_workers=opt.num_workers, pin_memory=True)
 
-    val_set = LoadDataset(src_path=os.path.join(opt.data_dir, opt.data_set, 'test'), patch_size=opt.test_patch_size, train=False)
+    val_set = LoadDataset(src_path=os.path.join(opt.data_dir, opt.data_set, 'test'), patch_size=opt.test_patch_size,
+                          train=False)
     val_data_loader = DataLoader(dataset=val_set, batch_size=opt.test_batch_size, shuffle=False,
                                  num_workers=opt.num_workers, pin_memory=True)
 
@@ -176,11 +181,12 @@ def main():
         # training
         train(opt, epoch, model, train_data_loader, optimizer, scheduler, criterion, logger, writer)
         # validation
-        psnr = valid(opt, epoch, val_data_loader, model, criterion, logger, writer)
+        if epoch > 100 or epoch % 5 == 0:
+            psnr = valid(opt, epoch, val_data_loader, model, criterion, logger, writer)
         # save model
         save_model(os.path.join(checkpoint_folder, "model_latest.pth"), epoch, model, optimizer, psnr_best, logger)
 
-        if psnr >= psnr_best:
+        if psnr > psnr_best:
             psnr_best = psnr
             epoch_best = epoch
             save_model(os.path.join(checkpoint_folder, "model_best.pth"), epoch, model, optimizer, psnr_best, logger)
@@ -188,7 +194,8 @@ def main():
         logger.info('||==> best_epoch = {}, best_psnr = {}'.format(epoch_best, psnr_best))
 
     # generate evaluate_mat for SSIM validation
-    gen_mat(ELD_UNet(), os.path.join(checkpoint_folder, "model_best.pth"), checkpoint_folder,  val_data_loader, opt.test_batch_size, opt.test_patch_size, logger)
+    gen_mat(ELD_UNet(), os.path.join(checkpoint_folder, "model_best.pth"), checkpoint_folder, val_data_loader,
+            opt.test_batch_size, opt.test_patch_size, logger)
 
 
 if __name__ == '__main__':
