@@ -181,15 +181,15 @@ def main():
         # training
         train(opt, epoch, model, train_data_loader, optimizer, scheduler, criterion, logger, writer)
         # validation
-        if epoch > 100 or epoch < 5 or epoch % 5 == 0:
+        if epoch > 100 or epoch < 3 or epoch % 5 == 0:
             psnr = valid(opt, epoch, val_data_loader, model, criterion, logger, writer)
             # save model
-            save_model(os.path.join(checkpoint_folder, "model_latest.pth"), epoch, model, optimizer, psnr_best, logger)
+        save_model(os.path.join(checkpoint_folder, "model_latest.pth"), epoch, model, optimizer, psnr_best, logger)
 
-            if psnr > psnr_best:
-                psnr_best = psnr
-                epoch_best = epoch
-                save_model(os.path.join(checkpoint_folder, "model_best.pth"), epoch, model, optimizer, psnr_best, logger)
+        if psnr > psnr_best:
+            psnr_best = psnr
+            epoch_best = epoch
+            save_model(os.path.join(checkpoint_folder, "model_best.pth"), epoch, model, optimizer, psnr_best, logger)
         scheduler.step()
         logger.info('||==> best_epoch = {}, best_psnr = {}'.format(epoch_best, psnr_best))
 

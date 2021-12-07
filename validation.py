@@ -41,9 +41,7 @@ def main():
     parser.add_argument('--patch_size', type=int, default=256, help='Size of cropped image')
     parser.add_argument('--test_batch_size', type=int, default=32, help='testing batch size, default=1')
     parser.add_argument('--data_set', type=str, default='sidd', help='the exact dataset we want to train on')
-    parser.add_argument('--pretrained', type=str,
-                        default='/mnt/lustre/yangmingzhuo/DGNet/logs/11-30/model_ELU_UNet_gpu_3,4_ds_sidd_ps_128_bs_32_ep_200_lr_0.0002_lr_min_1e-06_time_2021-12-01/checkpoint',
-                        help="Checkpoints directory,  (default:./checkpoints)")
+    parser.add_argument('--pretrained', type=str, help="Checkpoints directory,  (default:./checkpoints)")
 
     # global settings
     parser.add_argument('--gpus', default=1, type=str, help='id of gpus')
@@ -90,8 +88,8 @@ def main():
     model, psnr_best = load_single_model(pretrained_model, model, logger)
 
     valid(val_data_loader, model, logger)
-    # dst_folder = make_dir(os.path.join(opt.pretrained, opt.data_set))
-    # gen_mat(ELD_UNet(), os.path.join(checkpoint_folder, "model_best.pth"), dst_folder, val_data_loader, logger)
+    dst_folder = make_dir(os.path.join(opt.pretrained, opt.data_set))
+    gen_mat(ELD_UNet(), pretrained_model, dst_folder, val_data_loader, logger)
 
 if __name__ == '__main__':
     main()
