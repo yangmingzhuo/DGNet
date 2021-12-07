@@ -66,7 +66,7 @@ def main():
     logger = get_logger(log_folder, 'DGNet_log')
 
     # load dataset
-    logger.info("Load data from: {}".format(opt.data_dir, 'processed', opt.data_set, 'test'))
+    logger.info("Load data from: {}".format(os.path.join(opt.data_dir, 'processed', opt.data_set, 'test')))
     val_set = LoadDataset(src_path=os.path.join(opt.data_dir, 'processed', opt.data_set, 'test'),
                           patch_size=opt.patch_size, train=False)
     val_data_loader = DataLoader(dataset=val_set, batch_size=opt.test_batch_size, shuffle=False,
@@ -89,7 +89,7 @@ def main():
 
     valid(val_data_loader, model, logger)
     dst_folder = make_dir(os.path.join(opt.pretrained, opt.data_set))
-    gen_mat(ELD_UNet(), pretrained_model, dst_folder, val_data_loader, logger)
+    gen_mat(ELD_UNet(), pretrained_model, dst_folder, val_data_loader, opt.test_batch_size, opt.patch_size, logger)
 
 if __name__ == '__main__':
     main()

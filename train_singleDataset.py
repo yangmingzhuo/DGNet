@@ -183,7 +183,8 @@ def main():
         # validation
         if epoch > 100 or epoch < 3 or epoch % 5 == 0:
             psnr = valid(opt, epoch, val_data_loader, model, criterion, logger, writer)
-            # save model
+
+        # save model
         save_model(os.path.join(checkpoint_folder, "model_latest.pth"), epoch, model, optimizer, psnr_best, logger)
 
         if psnr > psnr_best:
@@ -194,8 +195,8 @@ def main():
         logger.info('||==> best_epoch = {}, best_psnr = {}'.format(epoch_best, psnr_best))
 
     # generate evaluate_mat for SSIM validation
-    gen_mat(ELD_UNet(), os.path.join(checkpoint_folder, "model_best.pth"), checkpoint_folder, val_data_loader,
-            opt.test_batch_size, opt.test_patch_size, logger)
+    # gen_mat(ELD_UNet(), os.path.join(checkpoint_folder, "model_best.pth"), checkpoint_folder, val_data_loader,
+    #        opt.test_batch_size, opt.test_patch_size, logger)
 
 
 if __name__ == '__main__':
