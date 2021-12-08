@@ -52,6 +52,7 @@ class LoadDataset(data.Dataset):
     def __len__(self):
         return len(self.img_paths)
 
+
 class LoadMultiDataset(data.Dataset):
 
     def __init__(self, src_path1, src_path2, src_path3, patch_size=128, train=True):
