@@ -71,9 +71,9 @@ def valid(opt, epoch, data_loader, model, criterion, logger, writer, local_rank)
             psnr.update(compare_psnr(prediction[i, :, :, :], target[i, :, :, :], data_range=1.0), 1)
 
         dist.barrier()
-        reduced_psnr = reduce_mean(psnr.avg, opt.nProcs)
+        reduced_psnr = reduce_mean(torch.Tensor([psnr.avg]).cuda(local_rank, non_blocking=True), opt.nProcs)
         reduced_loss = reduce_mean(loss, opt.nProcs)
-        psnr_val.update(reduced_psnr, prediction.shape[0])
+        psnr_val.update(reduced_psnr.item(), prediction.shape[0])
         loss_val.update(reduced_loss.item(), prediction.shape[0])
 
     ddp_writer_add_scalar('Validation_PSNR', psnr_val.avg, epoch, writer, opt.local_rank)
