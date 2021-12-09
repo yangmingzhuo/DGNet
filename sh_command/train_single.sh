@@ -34,3 +34,10 @@
 #    --gpus=0,1 \
 #    --data_set='rid2021_v2' \
 #    --exp_id=0 &
+
+#sidd
+srun -p aipe --gres=gpu:2 --job-name='DGNet' -w SH-IDC2-172-20-21-72 \
+nohup python train_singleDataset_ddp.py \
+    --gpus=0,1 \
+    --data_set='sidd' \
+    --exp_id=0 &

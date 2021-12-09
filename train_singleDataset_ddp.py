@@ -20,7 +20,7 @@ from utils.checkpoint import *
 from utils.gen_mat import *
 
 
-def train(opt, epoch, procs, model, data_loader, optimizer, scheduler, criterion, logger, writer, local_rank):
+def train(opt, epoch, model, data_loader, optimizer, scheduler, criterion, logger, writer, local_rank):
     t0 = time.time()
     epoch_loss = AverageMeter()
     model.train()
@@ -35,21 +35,21 @@ def train(opt, epoch, procs, model, data_loader, optimizer, scheduler, criterion
         loss.backward()
         optimizer.step()
 
-        reduced_loss = reduce_mean(loss, procs)
+        reduced_loss = reduce_mean(loss, opt.nProcs)
         epoch_loss.update(reduced_loss.item(), noisy.size(0))
         if iteration % opt.print_freq == 0:
             ddp_logger_info('Train epoch: [{:d}/{:d}]\titeration: [{:d}/{:d}]\tlr={:.6f}\tl1_loss={:.4f}'
                             .format(epoch, opt.nEpochs, iteration, len(data_loader), scheduler.get_lr()[0], epoch_loss.avg),
                             logger, opt.local_rank)
 
-    writer.add_scalar('Train_L1_loss', epoch_loss.avg, epoch)
-    writer.add_scalar('Learning_rate', scheduler.get_lr()[0], epoch)
+    ddp_writer_add_scalar('Train_L1_loss', epoch_loss.avg, epoch, writer, opt.local_rank)
+    ddp_writer_add_scalar('Learning_rate', scheduler.get_lr()[0], epoch, writer, opt.local_rank)
     ddp_logger_info('||==> Train epoch: [{:d}/{:d}]\tlr={:.6f}\tl1_loss={:.4f}\tcost_time={:.4f}'
                     .format(epoch, opt.nEpochs, scheduler.get_lr()[0], epoch_loss.avg, time.time() - t0),
                     logger, opt.local_rank)
 
 
-def valid(opt, epoch, procs, data_loader, model, criterion, logger, writer, local_rank):
+def valid(opt, epoch, data_loader, model, criterion, logger, writer, local_rank):
     t0 = time.time()
     model.eval()
     psnr_val = AverageMeter()
@@ -66,11 +66,11 @@ def valid(opt, epoch, procs, data_loader, model, criterion, logger, writer, loca
         target = target.data.cpu().numpy().astype(np.float32)
         for i in range(prediction.shape[0]):
             psnr_val.update(compare_psnr(prediction[i, :, :, :], target[i, :, :, :], data_range=1.0), 1)
-        reduced_loss = reduce_mean(loss, procs)
+        reduced_loss = reduce_mean(loss, opt.nProcs)
         loss_val.update(reduced_loss.item(), prediction.shape[0])
 
-    writer.add_scalar('Validation_PSNR', psnr_val.avg, epoch)
-    writer.add_scalar('Validation_loss', loss_val.avg, epoch)
+    ddp_writer_add_scalar('Validation_PSNR', psnr_val.avg, epoch, writer, opt.local_rank)
+    ddp_writer_add_scalar('Validation_loss', loss_val.avg, epoch, writer, opt.local_rank)
     ddp_logger_info('||==> Validation epoch: [{:d}/{:d}]\tval_PSNR={:.4f}\tval_loss={:.4f}\tcost_time={:.4f}'
                     .format(epoch, opt.nEpochs, psnr_val.avg, loss_val.avg, time.time() - t0),
                     logger, opt.local_rank)
@@ -126,7 +126,7 @@ def main():
 
     # log setting
     if opt.local_rank == 0:
-        log_folder = os.path.join(opt.log_dir, "model_{}_gpu_{}_ds_{}_ps_{}_bs_{}_ep_{}_lr_{}_lr_min_{}_exp_id_{}"
+        log_folder = os.path.join(opt.log_dir, "model_{}_gpu_{}_ds_{}_ps_{}_bs_{}_ep_{}_lr_{}_lr_min_{}_exp_id_{}_ddp"
                                   .format(opt.model_type, opt.gpus, opt.data_set, opt.patch_size, opt.batch_size,
                                           opt.nEpochs, opt.lr, opt.lr_min, opt.exp_id))
         output_process(log_folder)
@@ -206,7 +206,7 @@ def main():
         scheduler.step()
 
         # training
-        train(opt, epoch, opt.nProcs, model, train_data_loader, optimizer, scheduler, criterion, logger, writer, opt.local_rank)
+        train(opt, epoch, model, train_data_loader, optimizer, scheduler, criterion, logger, writer, opt.local_rank)
         # validation
         if epoch > 100 or epoch < 3 or epoch % 5 == 0:
             psnr = valid(opt, epoch, val_data_loader, model, criterion, logger, writer, opt.local_rank)

@@ -13,6 +13,11 @@ def ddp_logger_info(output, logger, local_rank):
         logger.info(output)
 
 
+def ddp_writer_add_scalar(label, data, epoch, writer, local_rank):
+    if local_rank == 0:
+        writer.add_scalar(label, data, epoch)
+
+
 def make_dir(path):
     if not os.path.exists(path):
         os.makedirs(path)
