@@ -20,7 +20,7 @@ from utils.checkpoint import *
 from utils.gen_mat import *
 
 
-def train(opt, epoch, model, data_loader, optimizer, scheduler, criterion, logger, writer, local_rank):
+def train(opt, epoch, procs, model, data_loader, optimizer, scheduler, criterion, logger, writer, local_rank):
     t0 = time.time()
     epoch_loss = AverageMeter()
     model.train()
@@ -35,9 +35,8 @@ def train(opt, epoch, model, data_loader, optimizer, scheduler, criterion, logge
         loss.backward()
         optimizer.step()
 
-        reduced_loss = reduce_mean(loss, args.nprocs)
-
-        epoch_loss.update(reduced_loss.item(), images.size(0))
+        reduced_loss = reduce_mean(loss, procs)
+        epoch_loss.update(reduced_loss.item(), noisy.size(0))
         if iteration % opt.print_freq == 0:
             ddp_logger_info('Train epoch: [{:d}/{:d}]\titeration: [{:d}/{:d}]\tlr={:.6f}\tl1_loss={:.4f}'
                             .format(epoch, opt.nEpochs, iteration, len(data_loader), scheduler.get_lr()[0], epoch_loss.avg),
@@ -50,14 +49,14 @@ def train(opt, epoch, model, data_loader, optimizer, scheduler, criterion, logge
                     logger, opt.local_rank)
 
 
-def valid(opt, epoch, data_loader, model, criterion, logger, writer, local_rank):
+def valid(opt, epoch, procs, data_loader, model, criterion, logger, writer, local_rank):
     t0 = time.time()
     model.eval()
     psnr_val = AverageMeter()
     loss_val = AverageMeter()
 
     for iteration, (noisy, target) in enumerate(data_loader):
-        noisy, target = noisy.cuda(), target.cuda()
+        noisy, target = noisy.cuda(local_rank, non_blocking=True), target.cuda(local_rank, non_blocking=True)
         with torch.no_grad():
             prediction = model(noisy)
             prediction = torch.clamp(prediction, 0.0, 1.0)
@@ -67,7 +66,8 @@ def valid(opt, epoch, data_loader, model, criterion, logger, writer, local_rank)
         target = target.data.cpu().numpy().astype(np.float32)
         for i in range(prediction.shape[0]):
             psnr_val.update(compare_psnr(prediction[i, :, :, :], target[i, :, :, :], data_range=1.0), 1)
-        loss_val.update(loss.data, prediction.shape[0])
+        reduced_loss = reduce_mean(loss, procs)
+        loss_val.update(reduced_loss.item(), prediction.shape[0])
 
     writer.add_scalar('Validation_PSNR', psnr_val.avg, epoch)
     writer.add_scalar('Validation_loss', loss_val.avg, epoch)
@@ -206,7 +206,7 @@ def main():
         scheduler.step()
 
         # training
-        train(opt, epoch, model, train_data_loader, optimizer, scheduler, criterion, logger, writer, opt.local_rank)
+        train(opt, epoch, opt.nProcs, model, train_data_loader, optimizer, scheduler, criterion, logger, writer, opt.local_rank)
         # validation
         if epoch > 100 or epoch < 3 or epoch % 5 == 0:
             psnr = valid(opt, epoch, val_data_loader, model, criterion, logger, writer, opt.local_rank)
