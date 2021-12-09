@@ -83,13 +83,13 @@ def main():
     model.cuda()
 
     # load pretrained model
-    pretrained_model = os.path.join(opt.pretrained, 'model_best.pth')
-    logger.info("Load model from: {}".format(pretrained_model))
-    model, psnr_best = load_single_model(pretrained_model, model, logger)
+    logger.info("Load model from: {}".format(opt.pretrained))
+    model, psnr_best = load_single_model(opt.pretrained, model, logger)
 
     valid(val_data_loader, model, logger)
     dst_folder = make_dir(os.path.join(opt.pretrained, opt.data_set))
-    gen_mat(ELD_UNet(), pretrained_model, dst_folder, val_data_loader, opt.test_batch_size, opt.patch_size, logger)
+    gen_mat(ELD_UNet(), opt.pretrained, dst_folder, val_data_loader, opt.test_batch_size, opt.patch_size, logger)
+
 
 if __name__ == '__main__':
     main()

@@ -12,6 +12,7 @@ from collections import OrderedDict
 
 import torch
 from torch import nn
+from utils.util import *
 
 
 def load_state(model, state_dict):
@@ -44,7 +45,7 @@ def save_model(save_path, epoch, model, optimizer, psnr_best, logger):
     logger.info('Epoch={}, save model and optimizer, psnr_best={}'.format(epoch, psnr_best))
 
 
-def load_model(checkpoint_path, model, optimizer, logger):
+def load_model(checkpoint_path, model, optimizer, logger, local_rank):
     check_point_params = torch.load(checkpoint_path)
     model_state = check_point_params["model"]
     optimizer.load_state_dict(check_point_params["optimizer"])
@@ -53,8 +54,8 @@ def load_model(checkpoint_path, model, optimizer, logger):
 
     model = load_state(model, model_state)
 
-    logger.info("load pretrained model and optimizer: epoch={}, psnr_best={}, model={}, optimizer={}"
-                .format(start_epoch, psnr_best, model, optimizer))
+    ddp_logger_info("load pretrained model and optimizer: epoch={}, psnr_best={}, model={}, optimizer={}"
+                .format(start_epoch, psnr_best, model, optimizer), logger, local_rank)
     return model, start_epoch, optimizer, psnr_best
 
 

@@ -5,6 +5,12 @@ import torch
 import glob
 from collections import OrderedDict
 import shutil
+import torch.distributed as dist
+
+
+def ddp_logger_info(output, logger, local_rank):
+    if local_rank == 0:
+        logger.info(output)
 
 
 def make_dir(path):
@@ -13,15 +19,10 @@ def make_dir(path):
     return path
 
 
-def output_process(output_path, opt):
+def output_process(output_path):
     if os.path.exists(output_path):
         print("{} file exist!".format(output_path))
-        action = opt.lower().strip()
-        act = action
-        if act == 'd':
-            shutil.rmtree(output_path)
-        else:
-            raise OSError("Directory {} exits!".format(output_path))
+        raise OSError("Directory {} exits!".format(output_path))
 
     if not os.path.exists(output_path):
         os.makedirs(output_path)
@@ -53,6 +54,13 @@ def print_network(net, logger):
         num_params += param.numel()
     logger.info('model={}'.format(net))
     logger.info('Total number of parameters: {}'.format(num_params))
+
+
+def reduce_mean(tensor, nprocs):
+    rt = tensor.clone()
+    dist.all_reduce(rt, op=dist.ReduceOp.SUM)
+    rt /= nprocs
+    return rt
 
 
 class AverageMeter(object):
