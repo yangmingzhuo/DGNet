@@ -147,7 +147,7 @@ def main():
     train_set = LoadDataset(src_path=os.path.join(opt.data_dir, opt.data_set, 'train'), patch_size=opt.patch_size,
                             train=True)
     train_sampler = DistributedSampler(train_set)
-    train_data_loader = DataLoader(dataset=train_set, batch_size=opt.batch_size, shuffle=True,
+    train_data_loader = DataLoader(dataset=train_set, batch_size=opt.batch_size,
                                    num_workers=opt.num_workers, pin_memory=True, sampler=train_sampler)
     ddp_logger_info('Train dataset length: {}'.format(len(train_data_loader)), logger, opt.local_rank)
 
