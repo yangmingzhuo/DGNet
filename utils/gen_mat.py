@@ -32,6 +32,8 @@ def gen_mat(model, pretrain_model, dst_path, data_loader, batch_size, patch_size
         os.remove(os.path.join(dst_path, 'denoised_evaluate_mat.mat'))
     if os.path.exists(os.path.join(dst_path, 'clean_evaluate_mat.mat')):
         os.remove(os.path.join(dst_path, 'clean_evaluate_mat.mat'))
-    hdf5storage.savemat(os.path.join(dst_path, 'denoised_evaluate_mat'), {"denoised": store_data_prediction}, do_compression=True, format='7.3')
-    hdf5storage.savemat(os.path.join(dst_path, 'clean_evaluate_mat'), {"clean": store_data_clean}, do_compression=True, format='7.3')
+    hdf5storage.savemat(os.path.join(dst_path, 'denoised_evaluate_mat'), {"denoised": store_data_prediction},
+                        do_compression=True, format='7.3')
+    hdf5storage.savemat(os.path.join(dst_path, 'clean_evaluate_mat'), {"clean": store_data_clean}, do_compression=True,
+                        format='7.3')
     logger.info('Mat with best model and {} patches generated!'.format(num))

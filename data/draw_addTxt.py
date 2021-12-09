@@ -22,7 +22,6 @@ def cv_imwrite(filePathName, img):
 # draw line and write number, add txt
 def draw_addTxt(img_path, patch_size=256, save_flag=True,
                 jpg_name="processed", fontScale=2, txt_name='patch_list.txt'):
-
     process_flag = True
     # print('img_path={}'.format(img_path))
     img = cv_imread(img_path)
@@ -47,8 +46,8 @@ def draw_addTxt(img_path, patch_size=256, save_flag=True,
     num = 0
     for height_index in range(0, height - patch_size, patch_size):
         for width_index in range(0, width - patch_size, patch_size):
-            num_x = width_index + int(patch_size/2)
-            num_y = height_index + int(patch_size/2)
+            num_x = width_index + int(patch_size / 2)
+            num_y = height_index + int(patch_size / 2)
             # draw number
             cv2.putText(img, "{}".format(num), (num_x, num_y), cv2.FONT_HERSHEY_SIMPLEX,
                         fontScale, color=(0, 0, 255), thickness=2)

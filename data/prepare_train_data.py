@@ -109,7 +109,9 @@ def prepare_polyu_data(src_path, dst_path, patch_size, rand_num_train=300):
             clean_patch = patch_list[patch_num][:, :, 3:6]
             img = np.concatenate([noisy_patch, clean_patch], 1)
             cv2.imwrite(os.path.join(dst_path_train,
-                                     '{}_img_{:03d}_patch_{:03d}.png'.format(os.path.join(os.path.basename(noisy_path).replace('_Real.JPG', '')), img_num + 1, patch_num + 1)), img)
+                                     '{}_img_{:03d}_patch_{:03d}.png'.format(
+                                         os.path.join(os.path.basename(noisy_path).replace('_Real.JPG', '')),
+                                         img_num + 1, patch_num + 1)), img)
 
 
 def prepare_nind_data(src_path, dst_path, patch_size, rand_num_train=300):
@@ -171,8 +173,9 @@ def prepare_rid2021_data(src_path, dst_path, patch_size, rand_num_train=300):
             clean_patch = patch_list[patch_num][:, :, 3:6]
             img = np.concatenate([noisy_patch, clean_patch], 1)
             cv2.imwrite(os.path.join(dst_path_train,
-                                     '{}_img_{:03d}_patch_{:03d}.png'.format(os.path.join(os.path.basename(noisy_path).replace('_noisy.jpeg', '')), img_num + 1, patch_num + 1)), img)
-
+                                     '{}_img_{:03d}_patch_{:03d}.png'.format(
+                                         os.path.join(os.path.basename(noisy_path).replace('_noisy.jpeg', '')),
+                                         img_num + 1, patch_num + 1)), img)
 
 
 def main():

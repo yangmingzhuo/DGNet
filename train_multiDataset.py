@@ -113,8 +113,10 @@ def main():
     epoch_best = 0
 
     # log setting
-    log_folder = os.path.join(opt.log_dir, "model_{}_gpu_{}_ds_{}_{}_{}_td_{}_ps_{}_bs_{}_ep_{}_lr_{}_lr_min_{}_exp_id_{}"
-                              .format(opt.model_type, opt.gpus, opt.data_set1, opt.data_set2, opt.data_set3, opt.data_set_test, opt.patch_size, opt.batch_size,
+    log_folder = os.path.join(opt.log_dir,
+                              "model_{}_gpu_{}_ds_{}_{}_{}_td_{}_ps_{}_bs_{}_ep_{}_lr_{}_lr_min_{}_exp_id_{}"
+                              .format(opt.model_type, opt.gpus, opt.data_set1, opt.data_set2, opt.data_set3,
+                                      opt.data_set_test, opt.patch_size, opt.batch_size,
                                       opt.nEpochs, opt.lr, opt.lr_min, opt.exp_id))
     if opt.pretrain_model == '':
         output_process(log_folder, 'd')

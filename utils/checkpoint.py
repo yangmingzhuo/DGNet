@@ -55,7 +55,7 @@ def load_model(checkpoint_path, model, optimizer, logger, local_rank):
     model = load_state(model, model_state)
 
     ddp_logger_info("load pretrained model and optimizer: epoch={}, psnr_best={}, model={}, optimizer={}"
-                .format(start_epoch, psnr_best, model, optimizer), logger, local_rank)
+                    .format(start_epoch, psnr_best, model, optimizer), logger, local_rank)
     return model, start_epoch, optimizer, psnr_best
 
 

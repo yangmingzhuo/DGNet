@@ -61,12 +61,14 @@ def prepare_renoir_data(src_path, dst_path):
         # prepare training data
         print('RENOIR train data processing...')
         for scene_num, src_scene_name in enumerate(tqdm(scene_path_train), 0):
-            shutil.copytree(os.path.join(camera_path, src_scene_name), os.path.join(dst_path_train, str(dst_camera_name) + '_' + str(src_scene_name)))
+            shutil.copytree(os.path.join(camera_path, src_scene_name),
+                            os.path.join(dst_path_train, str(dst_camera_name) + '_' + str(src_scene_name)))
 
         # prepare testing data
         print('RENOIR test data processing...')
         for scene_num, src_scene_name in enumerate(tqdm(scene_path_test), 0):
-            shutil.copytree(os.path.join(camera_path, src_scene_name), os.path.join(dst_path_test, str(dst_camera_name) + '_' + str(src_scene_name)))
+            shutil.copytree(os.path.join(camera_path, src_scene_name),
+                            os.path.join(dst_path_test, str(dst_camera_name) + '_' + str(src_scene_name)))
 
 
 def prepare_polyu_data(src_path, dst_path):
@@ -125,12 +127,14 @@ def prepare_nind_data(src_path, dst_path):
         # prepare training data
         print('NIND train data processing...')
         for scene_num, src_scene_name in enumerate(tqdm(scene_path_train), 0):
-            shutil.copytree(os.path.join(camera_path, src_scene_name), os.path.join(dst_path_train, str(dst_camera_name) + '_' + str(src_scene_name)))
+            shutil.copytree(os.path.join(camera_path, src_scene_name),
+                            os.path.join(dst_path_train, str(dst_camera_name) + '_' + str(src_scene_name)))
 
         # prepare testing data
         print('NIND test data processing...')
         for scene_num, src_scene_name in enumerate(tqdm(scene_path_test), 0):
-            shutil.copytree(os.path.join(camera_path, src_scene_name), os.path.join(dst_path_test, str(dst_camera_name) + '_' + str(src_scene_name)))
+            shutil.copytree(os.path.join(camera_path, src_scene_name),
+                            os.path.join(dst_path_test, str(dst_camera_name) + '_' + str(src_scene_name)))
 
 
 def prepare_rid2021_data(src_path, dst_path):
@@ -173,7 +177,6 @@ def prepare_rid2021_data(src_path, dst_path):
         shutil.copy(scene_gt_path, os.path.join(dst_path_test, name + '_gt.jpeg'))
 
 
-
 def main():
     parser = argparse.ArgumentParser(description='PyTorch data split')
     parser.add_argument('--data_set', type=str, default='sidd', help='the dataset to crop')
@@ -209,8 +212,8 @@ def main():
     elif opt.data_set == 'nind':
         print("start...NIND...")
         nind_src_path_list = [os.path.join(root_dir, 'NIND', 'C500D_8bit'),
-                                os.path.join(root_dir, 'NIND', 'XT1_8bit'),
-                                os.path.join(root_dir, 'NIND', 'XT1_16bit'), ]
+                              os.path.join(root_dir, 'NIND', 'XT1_8bit'),
+                              os.path.join(root_dir, 'NIND', 'XT1_16bit'), ]
         prepare_nind_data(nind_src_path_list, opt.dst_dir)
         print("end...NIND")
     elif opt.data_set == 'rid2021':

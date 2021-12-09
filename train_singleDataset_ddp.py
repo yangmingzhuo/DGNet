@@ -30,16 +30,17 @@ def train(opt, epoch, model, data_loader, optimizer, scheduler, criterion, logge
         prediction = model(noisy)
         loss = criterion(prediction, target)
 
-        dist.barrier()
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
+        dist.barrier()
         reduced_loss = reduce_mean(loss, opt.nProcs)
         epoch_loss.update(reduced_loss.item(), noisy.size(0))
         if iteration % opt.print_freq == 0:
             ddp_logger_info('Train epoch: [{:d}/{:d}]\titeration: [{:d}/{:d}]\tlr={:.6f}\tl1_loss={:.4f}'
-                            .format(epoch, opt.nEpochs, iteration, len(data_loader), scheduler.get_lr()[0], epoch_loss.avg),
+                            .format(epoch, opt.nEpochs, iteration, len(data_loader), scheduler.get_lr()[0],
+                                    epoch_loss.avg),
                             logger, opt.local_rank)
 
     ddp_writer_add_scalar('Train_L1_loss', epoch_loss.avg, epoch, writer, opt.local_rank)
@@ -56,17 +57,23 @@ def valid(opt, epoch, data_loader, model, criterion, logger, writer, local_rank)
     loss_val = AverageMeter()
 
     for iteration, (noisy, target) in enumerate(data_loader):
+        psnr = AverageMeter()
         noisy, target = noisy.cuda(local_rank, non_blocking=True), target.cuda(local_rank, non_blocking=True)
         with torch.no_grad():
             prediction = model(noisy)
             prediction = torch.clamp(prediction, 0.0, 1.0)
 
         loss = criterion(prediction, target)
+
         prediction = prediction.data.cpu().numpy().astype(np.float32)
         target = target.data.cpu().numpy().astype(np.float32)
         for i in range(prediction.shape[0]):
-            psnr_val.update(compare_psnr(prediction[i, :, :, :], target[i, :, :, :], data_range=1.0), 1)
+            psnr.update(compare_psnr(prediction[i, :, :, :], target[i, :, :, :], data_range=1.0), 1)
+
+        dist.barrier()
+        reduced_psnr = reduce_mean(psnr.avg, opt.nProcs)
         reduced_loss = reduce_mean(loss, opt.nProcs)
+        psnr_val.update(reduced_psnr, prediction.shape[0])
         loss_val.update(reduced_loss.item(), prediction.shape[0])
 
     ddp_writer_add_scalar('Validation_PSNR', psnr_val.avg, epoch, writer, opt.local_rank)
@@ -137,7 +144,7 @@ def main():
 
     # distributed init
     opt.nProcs = torch.cuda.device_count()
-    dist.init_process_group(backend='nccl', init_method="env://", world_size=opt.nProcs, rank=opt.local_rank)
+    dist.init_process_group(backend='nccl', world_size=opt.nProcs, rank=opt.local_rank)
     torch.cuda.set_device(device=opt.local_rank)
 
     # load dataset
