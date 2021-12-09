@@ -100,7 +100,7 @@ def main():
     parser.add_argument('--pretrain_model', type=str, default='', help='pretrain model path')
 
     # general settings
-    parser.add_argument('--gpus', default='0,1', type=str, help='id of gpus')
+    parser.add_argument('--gpus', default='0,1,2,3', type=str, help='id of gpus')
     parser.add_argument('--log_dir', default='./logs_v2/', help='Location to save checkpoint models')
     parser.add_argument('--seed', type=int, default=0, help='random seed to use. Default=0')
     parser.add_argument('--num_workers', type=int, default=8, help='number of workers')
@@ -137,7 +137,7 @@ def main():
 
     # distributed init
     opt.nProcs = torch.cuda.device_count()
-    dist.init_process_group(backend='nccl')
+    dist.init_process_group(backend='nccl', init_method="env://", world_size=opt.nProcs, rank=opt.local_rank)
     torch.cuda.set_device(device=opt.local_rank)
 
     # load dataset
