@@ -87,7 +87,7 @@ def main():
     model, psnr_best = load_single_model(opt.pretrained, model, logger)
 
     valid(val_data_loader, model, logger)
-    dst_folder = make_dir(os.path.join(opt.pretrained, opt.data_set))
+    dst_folder = make_dir(os.path.join(os.path.dirname(opt.pretrained), opt.data_set))
     gen_mat(ELD_UNet(), opt.pretrained, dst_folder, val_data_loader, opt.test_batch_size, opt.patch_size, logger)
 
 

@@ -8,9 +8,7 @@ import glob
 
 
 def cv_imread(filePath):
-    # 核心就是下面这句，一般直接用这句就行，直接把图片转为mat数据
     cv_img = cv2.imdecode(np.fromfile(filePath, dtype=np.uint8), -1)
-    # imdecode读取的是rgb，如果后续需要opencv处理的话，需要转换成bgr，转换后图片颜色会变化
     # cv_img = cv2.cvtColor(cv_img, cv2.COLOR_RGB2BGR)
     return cv_img
 
