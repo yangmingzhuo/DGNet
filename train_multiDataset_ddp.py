@@ -1,6 +1,8 @@
 import time
 import argparse
 import shutil
+
+import numpy as np
 import torch.cuda.random
 import torch.nn as nn
 import torch.optim as optim
@@ -13,44 +15,65 @@ from warmup_scheduler import GradualWarmupScheduler
 from tensorboardX import SummaryWriter
 from skimage.measure import compare_psnr
 
-from model.ELD_UNet import ELD_UNet
+from model.DG_UNet import *
+from model.loss import *
 from data.dataloader import *
 from utils.util import *
 from utils.checkpoint import *
 from utils.gen_mat import *
 
 
-def train(opt, epoch, model, data_loader_1, data_loader_2, data_loader_3, optimizer, scheduler, criterion, logger, writer, local_rank):
+def train(opt, epoch, model, ad_net, data_loader_1, data_loader_2, data_loader_3, optimizer, scheduler, criterion, logger, writer):
     t0 = time.time()
-    epoch_loss = AverageMeter()
+    epoch_model_loss = AverageMeter()
+    epoch_ad_loss = AverageMeter()
     model.train()
+    ad_net.train()
+    feature_size = 512
 
-    for iteration, (noisy, target) in enumerate(data_loader_1):
-        noisy, target = noisy.cuda(local_rank, non_blocking=True), target.cuda(local_rank, non_blocking=True)
-        prediction = model(noisy)
-        loss = criterion(prediction, target)
+    for iteration in range(opt.max_train_data_len):
+        iteration_1 = iteration % opt.train_data_len_1
+        (noisy1, target1) = data_loader_1[iteration_1]
+        noisy1, target1 = noisy1.cuda(opt.local_rank, non_blocking=True), target1.cuda(opt.local_rank, non_blocking=True)
+        iteration_2 = iteration % opt.train_data_len_2
+        (noisy2, target2) = data_loader_2[iteration_2]
+        noisy2, target2 = noisy2.cuda(opt.local_rank, non_blocking=True), target2.cuda(opt.local_rank, non_blocking=True)
+        iteration_3 = iteration % opt.train_data_len_3
+        (noisy3, target3) = data_loader_3[iteration_3]
+        noisy3, target3 = noisy3.cuda(opt.local_rank, non_blocking=True), target3.cuda(opt.local_rank, non_blocking=True)
+        input_data = torch.cat([noisy1, noisy2, noisy3], dim=0)
+        target_data = torch.cat([target1, target2, target3], dim=0)
+
+        prediction, feature = model(input_data)
+        discriminator_out_real = ad_net(feature)
+        ad_loss = get_ad_loss(discriminator_out_real, feature_size, opt.local_rank)
+        model_loss = criterion(prediction, target_data)
+        total_loss = model_loss + ad_loss
 
         optimizer.zero_grad()
-        loss.backward()
+        total_loss.backward()
         optimizer.step()
 
         dist.barrier()
-        reduced_loss = reduce_mean(loss, opt.nProcs)
-        epoch_loss.update(reduced_loss.item(), noisy.size(0))
+        reduced_model_loss = reduce_mean(model_loss, opt.nProcs)
+        reduced_ad_loss = reduce_mean(ad_loss, opt.nProcs)
+        epoch_model_loss.update(reduced_model_loss.item(), noisy1.size(0))
+        epoch_ad_loss.update(reduced_ad_loss.item(), noisy1.size(0))
         if iteration % opt.print_freq == 0:
-            ddp_logger_info('Train epoch: [{:d}/{:d}]\titeration: [{:d}/{:d}]\tlr={:.6f}\tl1_loss={:.4f}'
-                            .format(epoch, opt.nEpochs, iteration, len(data_loader), scheduler.get_lr()[0],
-                                    epoch_loss.avg),
+            ddp_logger_info('Train epoch: [{:d}/{:d}]\titeration: [{:d}/{:d}]\tlr={:.6f}\tl1_loss={:.4f}\tad_loss={:.4f}'
+                            .format(epoch, opt.nEpochs, iteration, len(data_loader_1), scheduler.get_lr()[0],
+                                    epoch_model_loss.avg, epoch_ad_loss.avg),
                             logger, opt.local_rank)
 
-    ddp_writer_add_scalar('Train_L1_loss', epoch_loss.avg, epoch, writer, opt.local_rank)
+    ddp_writer_add_scalar('Train_L1_loss', epoch_model_loss.avg, epoch, writer, opt.local_rank)
+    ddp_writer_add_scalar('Train_ad_loss', epoch_ad_loss.avg, epoch, writer, opt.local_rank)
     ddp_writer_add_scalar('Learning_rate', scheduler.get_lr()[0], epoch, writer, opt.local_rank)
-    ddp_logger_info('||==> Train epoch: [{:d}/{:d}]\tlr={:.6f}\tl1_loss={:.4f}\tcost_time={:.4f}'
-                    .format(epoch, opt.nEpochs, scheduler.get_lr()[0], epoch_loss.avg, time.time() - t0),
+    ddp_logger_info('||==> Train epoch: [{:d}/{:d}]\tlr={:.6f}\tl1_loss={:.4f}\tad_loss\tcost_time={:.4f}'
+                    .format(epoch, opt.nEpochs, scheduler.get_lr()[0], epoch_model_loss.avg, epoch_ad_loss.avg, time.time() - t0),
                     logger, opt.local_rank)
 
 
-def valid(opt, epoch, data_loader, model, criterion, logger, writer, local_rank):
+def valid(opt, epoch, data_loader, model, criterion, logger, writer):
     t0 = time.time()
     model.eval()
     psnr_val = AverageMeter()
@@ -58,7 +81,7 @@ def valid(opt, epoch, data_loader, model, criterion, logger, writer, local_rank)
 
     for iteration, (noisy, target) in enumerate(data_loader):
         psnr = AverageMeter()
-        noisy, target = noisy.cuda(local_rank, non_blocking=True), target.cuda(local_rank, non_blocking=True)
+        noisy, target = noisy.cuda(opt.local_rank, non_blocking=True), target.cuda(opt.local_rank, non_blocking=True)
         with torch.no_grad():
             prediction = model(noisy)
             prediction = torch.clamp(prediction, 0.0, 1.0)
@@ -71,7 +94,7 @@ def valid(opt, epoch, data_loader, model, criterion, logger, writer, local_rank)
             psnr.update(compare_psnr(prediction[i, :, :, :], target[i, :, :, :], data_range=1.0), 1)
 
         dist.barrier()
-        reduced_psnr = reduce_mean(torch.Tensor([psnr.avg]).cuda(local_rank, non_blocking=True), opt.nProcs)
+        reduced_psnr = reduce_mean(torch.Tensor([psnr.avg]).cuda(opt.local_rank, non_blocking=True), opt.nProcs)
         reduced_loss = reduce_mean(loss, opt.nProcs)
         psnr_val.update(reduced_psnr.item(), prediction.shape[0])
         loss_val.update(reduced_loss.item(), prediction.shape[0])
@@ -172,9 +195,13 @@ def main():
     train_sampler_3 = DistributedSampler(train_set_3)
     train_data_loader_3 = DataLoader(dataset=train_set_3, batch_size=opt.batch_size,
                                      num_workers=opt.num_workers, pin_memory=True, sampler=train_sampler_3)
-    ddp_logger_info('Train dataset 1 length: {}'.format(len(train_data_loader_1)), logger, opt.local_rank)
-    ddp_logger_info('Train dataset 2 length: {}'.format(len(train_data_loader_2)), logger, opt.local_rank)
-    ddp_logger_info('Train dataset 3 length: {}'.format(len(train_data_loader_3)), logger, opt.local_rank)
+    opt.train_data_len_1 = len(train_data_loader_1)
+    opt.train_data_len_2 = len(train_data_loader_2)
+    opt.train_data_len_3 = len(train_data_loader_3)
+    opt.max_train_data_len = max(opt.train_data_len_1, opt.train_data_len_2, opt.train_data_len_3)
+    ddp_logger_info('Train dataset 1 length: {}'.format(opt.train_data_len_1), logger, opt.local_rank)
+    ddp_logger_info('Train dataset 2 length: {}'.format(opt.train_data_len_2), logger, opt.local_rank)
+    ddp_logger_info('Train dataset 3 length: {}'.format(opt.train_data_len_3), logger, opt.local_rank)
 
     val_set = LoadDataset(src_path=os.path.join(opt.data_dir, opt.data_set_test, 'test'),
                           patch_size=opt.test_patch_size,
@@ -186,12 +213,15 @@ def main():
 
     # load network
     ddp_logger_info('Building model {}'.format(opt.model_type), logger, opt.local_rank)
-    model = ELD_UNet()
+    model = DG_UNet()
+    ad_net = Discriminator(opt.nEpochs * opt.max_train_data_len)
 
     ddp_logger_info("Push model to distribute data parallel!", logger, opt.local_rank)
     model.cuda(device=opt.local_rank)
-    ddp_logger_info('model={}'.format(model), logger, opt.local_rank)
+    ad_net.cuda(device=opt.local_rank)
+    ddp_logger_info('model={}\nad_net={}'.format(model, ad_net), logger, opt.local_rank)
     model = DDP(model, device_ids=[opt.local_rank])
+    ad_net = DDP(ad_net, device_ids=[opt.local_rank])
 
     # loss
     ddp_logger_info('Use L1 loss as criterion', logger, opt.local_rank)
@@ -203,8 +233,11 @@ def main():
     t_max = opt.nEpochs - warmup_epochs
     ddp_logger_info('Optimizer: Adam Warmup epochs: {}, Learning rate: {}, Scheduler: CosineAnnealingLR, T_max: {}'
                     .format(warmup_epochs, opt.lr, t_max), logger, opt.local_rank)
-
-    optimizer = optim.Adam(model.parameters(), lr=opt.lr, weight_decay=opt.weight_decay)
+    optimizer_dict = [
+        {"params": filter(lambda p: p.requires_grad, model.parameters()), "lr": opt.lr},
+        {"params": filter(lambda p: p.requires_grad, ad_net.parameters()), "lr": opt.lr},
+    ]
+    optimizer = optim.Adam(optimizer_dict, lr=opt.lr, weight_decay=opt.weight_decay)
     ddp_logger_info('optimizer={}'.format(optimizer), logger, opt.local_rank)
 
     scheduler_cosine = optim.lr_scheduler.CosineAnnealingLR(optimizer, t_max, eta_min=opt.lr_min)
@@ -234,23 +267,22 @@ def main():
         scheduler.step()
 
         # training
-        train(opt, epoch, model, train_data_loader_1, train_data_loader_2, train_data_loader_3, optimizer, scheduler,
-              criterion, logger, writer, opt.local_rank)
+        train(opt, epoch, model, ad_net, train_data_loader_1, train_data_loader_2, train_data_loader_3, optimizer, scheduler,
+              criterion, logger, writer)
         # validation
-        if epoch > 100 or epoch < 3 or epoch % 5 == 0:
-            psnr = valid(opt, epoch, val_data_loader, model, criterion, logger, writer, opt.local_rank)
+        psnr = valid(opt, epoch, val_data_loader, model, criterion, logger, writer, opt.local_rank)
 
         # save model
         if opt.local_rank == 0:
-            save_model(os.path.join(checkpoint_folder, "model_latest.pth"), epoch, model, optimizer, psnr_best, logger)
+            save_model(os.path.join(checkpoint_folder, "model_latest.pth"), epoch, model, ad_net, optimizer, psnr_best, logger)
 
             if psnr > psnr_best:
                 psnr_best = psnr
                 epoch_best = epoch
-                save_model(os.path.join(checkpoint_folder, "model_best.pth"), epoch, model, optimizer, psnr_best,
+                save_model(os.path.join(checkpoint_folder, "model_best.pth"), epoch, model, ad_net, optimizer, psnr_best,
                            logger)
 
-        ddp_logger_info('||==> best_epoch = {}, best_psnr = {}'.format(epoch_best, psnr_best), logger, opt.local_rank)
+        ddp_logger_info('||==> best_epoch = {}, best_psnr = {}'.format(epoch_best, psnr_best), logger)
 
     # generate evaluate_mat for SSIM validation
     # gen_mat(ELD_UNet(), os.path.join(checkpoint_folder, "model_best.pth"), checkpoint_folder, val_data_loader,

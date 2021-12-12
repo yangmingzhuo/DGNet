@@ -37,9 +37,9 @@
 
 ##DDP
 #sidd
-#srun -p aipe --gres=gpu:4 --job-name='DGNet' -w SH-IDC2-172-20-21-216 \
-#nohup python -m torch.distributed.launch --nproc_per_node=4 --master_port=23334 train_singleDataset_ddp.py \
-#    --gpus=0,1,2,3 \
-#    --data_set='sidd' \
-#    --batch_size=16 \
-#    --exp_id=0 &
+srun -p aipe --gres=gpu:2 --job-name='DGNet' -w SH-IDC2-172-20-21-216 \
+nohup python -m torch.distributed.launch --nproc_per_node=4 --master_port=23334 train_singleDataset_ddp.py \
+    --gpus=0,1 \
+    --data_set='sidd' \
+    --batch_size=16 \
+    --exp_id=0 &

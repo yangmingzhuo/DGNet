@@ -57,18 +57,18 @@ class LoadMultiDataset(data.Dataset):
 
     def __init__(self, src_path1, src_path2, src_path3, patch_size=128, train=True):
 
-        files = glob.glob(src_path1 + '/*.png')
-        files.sort()
+        files1 = glob.glob(src_path1 + '/*.png')
+        files1.sort()
         self.img_paths = []
-        for file_name in files:
+        for file_name in files1:
             self.img_paths.append(file_name)
-        files = glob.glob(src_path2 + '/*.png')
-        files.sort()
-        for file_name in files:
+        files2 = glob.glob(src_path2 + '/*.png')
+        files2.sort()
+        for file_name in files2:
             self.img_paths.append(file_name)
-        files = glob.glob(src_path3 + '/*.png')
-        files.sort()
-        for file_name in files:
+        files3 = glob.glob(src_path3 + '/*.png')
+        files3.sort()
+        for file_name in files3:
             self.img_paths.append(file_name)
         self.patch_size = patch_size
         self.train = train

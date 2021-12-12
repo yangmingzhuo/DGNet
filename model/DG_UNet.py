@@ -5,12 +5,12 @@ import numpy as np
 
 
 class GRL(torch.autograd.Function):
-    def __init__(self):
+    def __init__(self, max_iter):
         self.iter_num = 0
         self.alpha = 10
         self.low = 0.0
         self.high = 1.0
-        self.max_iter = 4000  # be same to the max_iter of config.py
+        self.max_iter = max_iter
 
     def forward(self, input):
         self.iter_num += 1
@@ -23,7 +23,7 @@ class GRL(torch.autograd.Function):
 
 
 class Discriminator(nn.Module):
-    def __init__(self):
+    def __init__(self, max_iter):
         super(Discriminator, self).__init__()
         self.fc1 = nn.Linear(512, 512)
         self.fc1.weight.data.normal_(0, 0.01)
@@ -37,7 +37,7 @@ class Discriminator(nn.Module):
             nn.Dropout(0.5),
             self.fc2
         )
-        self.grl_layer = GRL()
+        self.grl_layer = GRL(max_iter)
 
     def forward(self, feature):
         adversarial_out = self.ad_net(self.grl_layer(feature))

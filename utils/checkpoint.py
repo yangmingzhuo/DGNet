@@ -30,12 +30,14 @@ def load_state(model, state_dict):
     return model
 
 
-def save_model(save_path, epoch, model, optimizer, psnr_best, logger):
+def save_model(save_path, epoch, model, ad_net, optimizer, psnr_best, logger):
     check_point_params = {}
     if isinstance(model, nn.DataParallel):
         check_point_params["model"] = model.module.state_dict()
+        check_point_params["ad_net"] = ad_net.module.state_dict()
     else:
         check_point_params["model"] = model.state_dict()
+        check_point_params["ad_net"] = ad_net.state_dict()
 
     check_point_params["optimizer"] = optimizer.state_dict()
     check_point_params['epoch'] = epoch
