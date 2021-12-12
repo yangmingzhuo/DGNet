@@ -14,6 +14,7 @@ from torch.utils.data.distributed import DistributedSampler
 from warmup_scheduler import GradualWarmupScheduler
 from tensorboardX import SummaryWriter
 from skimage.measure import compare_psnr
+from itertools import cycle
 
 from model.DG_UNet import *
 from model.loss import *
@@ -29,26 +30,21 @@ def train(opt, epoch, model, ad_net, data_loader_1, data_loader_2, data_loader_3
     epoch_ad_loss = AverageMeter()
     model.train()
     ad_net.train()
-    feature_size = 512
 
-    for iteration in range(opt.max_train_data_len):
-        iteration_1 = iteration % opt.train_data_len_1
-        (noisy1, target1) = data_loader_1[iteration_1]
+    for iteration, batch in enumerate(zip(cycle(data_loader_1), cycle(data_loader_2), data_loader_3)):
+        (noisy1, target1), (noisy2, target2), (noisy3, target3) = batch
         noisy1, target1 = noisy1.cuda(opt.local_rank, non_blocking=True), target1.cuda(opt.local_rank, non_blocking=True)
-        iteration_2 = iteration % opt.train_data_len_2
-        (noisy2, target2) = data_loader_2[iteration_2]
         noisy2, target2 = noisy2.cuda(opt.local_rank, non_blocking=True), target2.cuda(opt.local_rank, non_blocking=True)
-        iteration_3 = iteration % opt.train_data_len_3
-        (noisy3, target3) = data_loader_3[iteration_3]
         noisy3, target3 = noisy3.cuda(opt.local_rank, non_blocking=True), target3.cuda(opt.local_rank, non_blocking=True)
+        label = [noisy1.shape[0], noisy2.shape[0], noisy3.shape[0]]
         input_data = torch.cat([noisy1, noisy2, noisy3], dim=0)
         target_data = torch.cat([target1, target2, target3], dim=0)
 
         prediction, feature = model(input_data)
         discriminator_out_real = ad_net(feature)
-        ad_loss = get_ad_loss(discriminator_out_real, feature_size, opt.local_rank)
+        ad_loss = get_ad_loss(discriminator_out_real, label, opt.local_rank)
         model_loss = criterion(prediction, target_data)
-        total_loss = model_loss + ad_loss
+        total_loss = model_loss + opt.lambda_ad * ad_loss
 
         optimizer.zero_grad()
         total_loss.backward()
@@ -61,7 +57,7 @@ def train(opt, epoch, model, ad_net, data_loader_1, data_loader_2, data_loader_3
         epoch_ad_loss.update(reduced_ad_loss.item(), noisy1.size(0))
         if iteration % opt.print_freq == 0:
             ddp_logger_info('Train epoch: [{:d}/{:d}]\titeration: [{:d}/{:d}]\tlr={:.6f}\tl1_loss={:.4f}\tad_loss={:.4f}'
-                            .format(epoch, opt.nEpochs, iteration, len(data_loader_1), scheduler.get_lr()[0],
+                            .format(epoch, opt.nEpochs, iteration, len(data_loader_3), scheduler.get_lr()[0],
                                     epoch_model_loss.avg, epoch_ad_loss.avg),
                             logger, opt.local_rank)
 
@@ -83,7 +79,7 @@ def valid(opt, epoch, data_loader, model, criterion, logger, writer):
         psnr = AverageMeter()
         noisy, target = noisy.cuda(opt.local_rank, non_blocking=True), target.cuda(opt.local_rank, non_blocking=True)
         with torch.no_grad():
-            prediction = model(noisy)
+            prediction, _ = model(noisy)
             prediction = torch.clamp(prediction, 0.0, 1.0)
 
         loss = criterion(prediction, target)
@@ -127,6 +123,7 @@ def main():
     parser.add_argument('--lr_min', type=float, default=1e-5, help='minimum learning rate. default=0.000001')
     parser.add_argument('--start_iter', type=int, default=1, help='starting epoch')
     parser.add_argument('--weight_decay', type=float, default=1e-8, help='weight_decay')
+    parser.add_argument('--lambda_ad', type=float, default=0.001, help='lambda_ad')
 
     # model settings
     parser.add_argument('--model_type', type=str, default='ELU_UNet', help='the name of model')
@@ -160,7 +157,7 @@ def main():
     # log setting
     if opt.local_rank == 0:
         log_folder = os.path.join(opt.log_dir,
-                                  "model_{}_gpu_{}_ds_{}_{}_{}_td_{}_ps_{}_bs_{}_ep_{}_lr_{}_lr_min_{}_exp_id_{}"
+                                  "model_{}_gpu_{}_ds_{}_{}_{}_td_{}_ps_{}_bs_{}_ep_{}_lr_{}_lr_min_{}_exp_id_{}_ddp"
                                   .format(opt.model_type, opt.gpus, opt.data_set1, opt.data_set2, opt.data_set3,
                                           opt.data_set_test, opt.patch_size, opt.batch_size,
                                           opt.nEpochs, opt.lr, opt.lr_min, opt.exp_id))
@@ -179,12 +176,12 @@ def main():
     ddp_logger_info('Loading datasets {}, {}, {}, Batch Size: {}, Patch Size: {}'.format(opt.data_set1, opt.data_set2,
                                                                                          opt.data_set3,
                                                                                          opt.batch_size,
-                                                                                         opt.patch_size))
-    train_set_1 = LoadDataset(src_path=os.path.join(opt.data_dir, opt.data_set, 'train'), patch_size=opt.patch_size,
+                                                                                         opt.patch_size), logger, opt.local_rank)
+    train_set_1 = LoadDataset(src_path=os.path.join(opt.data_dir, opt.data_set1, 'train'), patch_size=opt.patch_size,
                               train=True)
-    train_set_2 = LoadDataset(src_path=os.path.join(opt.data_dir, opt.data_set, 'train'), patch_size=opt.patch_size,
+    train_set_2 = LoadDataset(src_path=os.path.join(opt.data_dir, opt.data_set2, 'train'), patch_size=opt.patch_size,
                               train=True)
-    train_set_3 = LoadDataset(src_path=os.path.join(opt.data_dir, opt.data_set, 'train'), patch_size=opt.patch_size,
+    train_set_3 = LoadDataset(src_path=os.path.join(opt.data_dir, opt.data_set3, 'train'), patch_size=opt.patch_size,
                               train=True)
     train_sampler_1 = DistributedSampler(train_set_1)
     train_data_loader_1 = DataLoader(dataset=train_set_1, batch_size=opt.batch_size,
@@ -195,6 +192,9 @@ def main():
     train_sampler_3 = DistributedSampler(train_set_3)
     train_data_loader_3 = DataLoader(dataset=train_set_3, batch_size=opt.batch_size,
                                      num_workers=opt.num_workers, pin_memory=True, sampler=train_sampler_3)
+    train_data_loader_1, train_data_loader_2, train_data_loader_3 = dataset_sort(train_data_loader_1,
+                                                                                 train_data_loader_2,
+                                                                                 train_data_loader_3)
     opt.train_data_len_1 = len(train_data_loader_1)
     opt.train_data_len_2 = len(train_data_loader_2)
     opt.train_data_len_3 = len(train_data_loader_3)
@@ -270,7 +270,7 @@ def main():
         train(opt, epoch, model, ad_net, train_data_loader_1, train_data_loader_2, train_data_loader_3, optimizer, scheduler,
               criterion, logger, writer)
         # validation
-        psnr = valid(opt, epoch, val_data_loader, model, criterion, logger, writer, opt.local_rank)
+        psnr = valid(opt, epoch, val_data_loader, model, criterion, logger, writer)
 
         # save model
         if opt.local_rank == 0:
@@ -282,7 +282,7 @@ def main():
                 save_model(os.path.join(checkpoint_folder, "model_best.pth"), epoch, model, ad_net, optimizer, psnr_best,
                            logger)
 
-        ddp_logger_info('||==> best_epoch = {}, best_psnr = {}'.format(epoch_best, psnr_best), logger)
+        ddp_logger_info('||==> best_epoch = {}, best_psnr = {}'.format(epoch_best, psnr_best), logger, opt.local_rank)
 
     # generate evaluate_mat for SSIM validation
     # gen_mat(ELD_UNet(), os.path.join(checkpoint_folder, "model_best.pth"), checkpoint_folder, val_data_loader,

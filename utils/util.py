@@ -68,6 +68,19 @@ def reduce_mean(tensor, nprocs):
     return rt
 
 
+def dataset_sort(data_loader_1, data_loader_2, data_loader_3):
+    len1 = len(data_loader_1)
+    len2 = len(data_loader_2)
+    len3 = len(data_loader_3)
+    max_len = max(len1, len2, len3)
+    if len3 == max_len:
+        return data_loader_1, data_loader_2, data_loader_3
+    elif len2 == max_len:
+        return data_loader_1, data_loader_3, data_loader_2
+    elif len1 == max_len:
+        return data_loader_2, data_loader_3, data_loader_1
+
+
 class AverageMeter(object):
     def __init__(self):
         self.val = 0

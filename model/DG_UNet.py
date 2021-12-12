@@ -25,6 +25,17 @@ class GRL(torch.autograd.Function):
 class Discriminator(nn.Module):
     def __init__(self, max_iter):
         super(Discriminator, self).__init__()
+        self.conv3_1 = nn.Conv2d(512, 512, kernel_size=3, stride=2, padding=1, bias=False)
+        self.avg_pool = nn.AvgPool2d(kernel_size=2, stride=2)
+        self.gen_feature = nn.Sequential(
+            self.conv3_1,
+            nn.BatchNorm2d(512),
+            nn.ReLU(inplace=True),
+            self.conv3_1,
+            nn.BatchNorm2d(512),
+            nn.ReLU(inplace=True),
+            self.avg_pool,
+        )
         self.fc1 = nn.Linear(512, 512)
         self.fc1.weight.data.normal_(0, 0.01)
         self.fc1.bias.data.fill_(0.0)
@@ -39,7 +50,10 @@ class Discriminator(nn.Module):
         )
         self.grl_layer = GRL(max_iter)
 
+
     def forward(self, feature):
+        feature = self.gen_feature(feature)
+        feature = feature.view(feature.size(0), -1)
         adversarial_out = self.ad_net(self.grl_layer(feature))
         return adversarial_out
 
@@ -106,8 +120,6 @@ class DG_UNet(nn.Module):
         conv5 = self.lrelu(self.conv5_1(pool4))
         conv5 = self.lrelu(self.conv5_2(conv5))
 
-        # feature
-
         up6 = self.upv6(conv5)
         up6 = torch.cat([up6, conv4], 1)
         conv6 = self.lrelu(self.conv6_1(up6))
@@ -131,7 +143,7 @@ class DG_UNet(nn.Module):
         conv10 = self.conv10_1(conv9)
         # out = nn.functional.pixel_shuffle(conv10, 2)
         out = conv10
-        return out
+        return out, conv5
 
     def _initialize_weights(self):
         for m in self.modules():
