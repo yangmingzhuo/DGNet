@@ -44,7 +44,7 @@ def save_model(save_path, epoch, model, ad_net, optimizer, psnr_best, logger):
     check_point_params["psnr_best"] = psnr_best
 
     torch.save(check_point_params, save_path)
-    logger.info('Epoch={}, save model and optimizer, psnr_best={}'.format(epoch, psnr_best))
+    logger.info('||==> Epoch={}, save model and optimizer, psnr_best={}'.format(epoch, psnr_best))
 
 
 def load_model(checkpoint_path, model, optimizer, logger, local_rank):

@@ -163,10 +163,10 @@ def main():
     # log setting
     if opt.local_rank == 0:
         log_folder = os.path.join(opt.log_dir,
-                                  "model_{}_gpu_{}_ds_{}_{}_{}_td_{}_ps_{}_bs_{}_ep_{}_lr_{}_lr_min_{}_exp_id_{}_ddp"
+                                  "model_{}_gpu_{}_ds_{}_{}_{}_td_{}_ps_{}_bs_{}_ep_{}_lr_{}_lr_min_{}_lam_ad{}_exp_id_{}_ddp"
                                   .format(opt.model_type, opt.gpus, opt.data_set1, opt.data_set2, opt.data_set3,
                                           opt.data_set_test, opt.patch_size, opt.batch_size,
-                                          opt.nEpochs, opt.lr, opt.lr_min, opt.exp_id))
+                                          opt.nEpochs, opt.lr, opt.lr_min, opt.lambda_ad, opt.exp_id))
         output_process(log_folder)
         checkpoint_folder = make_dir(os.path.join(log_folder, 'checkpoint'))
         writer = SummaryWriter(log_folder)

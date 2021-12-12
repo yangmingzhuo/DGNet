@@ -36,6 +36,14 @@ class Discriminator(nn.Module):
             nn.ReLU(inplace=True),
             self.avg_pool,
         )
+        self.bottleneck_layer_fc = nn.Linear(512, 512)
+        self.bottleneck_layer_fc.weight.data.normal_(0, 0.005)
+        self.bottleneck_layer_fc.bias.data.fill_(0.1)
+        self.bottleneck_layer = nn.Sequential(
+            self.bottleneck_layer_fc,
+            nn.ReLU(),
+            nn.Dropout(0.5)
+        )
         self.fc1 = nn.Linear(512, 512)
         self.fc1.weight.data.normal_(0, 0.01)
         self.fc1.bias.data.fill_(0.0)
@@ -54,6 +62,9 @@ class Discriminator(nn.Module):
     def forward(self, feature):
         feature = self.gen_feature(feature)
         feature = feature.view(feature.size(0), -1)
+        feature = self.bottleneck_layer(feature)
+        feature_norm = torch.norm(feature, p=2, dim=1, keepdim=True).clamp(min=1e-12) ** 0.5 * 2 ** 0.5
+        feature = torch.div(feature, feature_norm)
         adversarial_out = self.ad_net(self.grl_layer(feature))
         return adversarial_out
 
