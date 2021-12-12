@@ -280,13 +280,13 @@ def main():
 
         # save model
         if opt.local_rank == 0:
-            save_model(os.path.join(checkpoint_folder, "model_latest.pth"), epoch, model, ad_net, optimizer, psnr_best, logger)
-
             if psnr > psnr_best:
                 psnr_best = psnr
                 epoch_best = epoch
                 save_model(os.path.join(checkpoint_folder, "model_best.pth"), epoch, model, ad_net, optimizer, psnr_best,
                            logger)
+            save_model(os.path.join(checkpoint_folder, "model_latest.pth"), epoch, model, ad_net, optimizer, psnr_best,
+                       logger)
 
         ddp_logger_info('||==> best_epoch = {}, best_psnr = {}'.format(epoch_best, psnr_best), logger, opt.local_rank)
 
