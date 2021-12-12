@@ -32,6 +32,7 @@ def train(opt, epoch, model, ad_net, data_loader_1, data_loader_2, data_loader_3
     ad_net.train()
 
     for iteration, batch in enumerate(zip(cycle(data_loader_1), cycle(data_loader_2), data_loader_3)):
+        # load data
         (noisy1, target1), (noisy2, target2), (noisy3, target3) = batch
         noisy1, target1 = noisy1.cuda(opt.local_rank, non_blocking=True), target1.cuda(opt.local_rank, non_blocking=True)
         noisy2, target2 = noisy2.cuda(opt.local_rank, non_blocking=True), target2.cuda(opt.local_rank, non_blocking=True)
@@ -40,16 +41,21 @@ def train(opt, epoch, model, ad_net, data_loader_1, data_loader_2, data_loader_3
         input_data = torch.cat([noisy1, noisy2, noisy3], dim=0)
         target_data = torch.cat([target1, target2, target3], dim=0)
 
+        # forward
         prediction, feature = model(input_data)
         discriminator_out_real = ad_net(feature)
+
+        # loss
         ad_loss = get_ad_loss(discriminator_out_real, label, opt.local_rank)
         model_loss = criterion(prediction, target_data)
         total_loss = model_loss + opt.lambda_ad * ad_loss
 
+        # backward
         optimizer.zero_grad()
         total_loss.backward()
         optimizer.step()
 
+        # output
         dist.barrier()
         reduced_model_loss = reduce_mean(model_loss, opt.nProcs)
         reduced_ad_loss = reduce_mean(ad_loss, opt.nProcs)
