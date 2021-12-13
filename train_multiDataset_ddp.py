@@ -42,8 +42,6 @@ def train(opt, epoch, model, ad_net, data_loader_1, data_loader_2, data_loader_3
             total_loss = model_loss
         else:
             discriminator_out_real = ad_net(feature)
-
-            # loss
             ad_loss = get_ad_loss(discriminator_out_real, label, opt.local_rank)
             total_loss = model_loss + opt.lambda_ad * ad_loss
 
