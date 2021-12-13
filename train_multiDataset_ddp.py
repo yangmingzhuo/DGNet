@@ -1,12 +1,8 @@
 import time
 import argparse
-import shutil
 
-import numpy as np
 import torch.cuda.random
-import torch.nn as nn
 import torch.optim as optim
-import torch.distributed as dist
 import torch.backends.cudnn as cudnn
 from torch.utils.data import DataLoader
 from torch.nn.parallel import DistributedDataParallel as DDP
@@ -17,10 +13,8 @@ from skimage.measure import compare_psnr
 from itertools import cycle
 
 from model.DG_UNet import *
-from model.loss import *
+from loss.loss import *
 from data.dataloader import *
-from utils.util import *
-from utils.checkpoint import *
 from utils.gen_mat import *
 
 
@@ -43,12 +37,16 @@ def train(opt, epoch, model, ad_net, data_loader_1, data_loader_2, data_loader_3
 
         # forward
         prediction, feature = model(input_data)
-        discriminator_out_real = ad_net(feature)
+        if opt.lambda_ad == 0:
+            model_loss = criterion(prediction, target_data)
+            total_loss = model_loss
+        else:
+            discriminator_out_real = ad_net(feature)
 
-        # loss
-        ad_loss = get_ad_loss(discriminator_out_real, label, opt.local_rank)
-        model_loss = criterion(prediction, target_data)
-        total_loss = model_loss + opt.lambda_ad * ad_loss
+            # loss
+            ad_loss = get_ad_loss(discriminator_out_real, label, opt.local_rank)
+            model_loss = criterion(prediction, target_data)
+            total_loss = model_loss + opt.lambda_ad * ad_loss
 
         # backward
         optimizer.zero_grad()
@@ -129,7 +127,7 @@ def main():
     parser.add_argument('--lr_min', type=float, default=1e-5, help='minimum learning rate. default=0.000001')
     parser.add_argument('--start_iter', type=int, default=1, help='starting epoch')
     parser.add_argument('--weight_decay', type=float, default=1e-8, help='weight_decay')
-    parser.add_argument('--lambda_ad', type=float, default=0.001, help='lambda_ad')
+    parser.add_argument('--lambda_ad', type=float, default=1, help='lambda_ad')
 
     # model settings
     parser.add_argument('--model_type', type=str, default='ELU_UNet', help='the name of model')

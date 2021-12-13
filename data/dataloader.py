@@ -1,10 +1,15 @@
 import glob
-from PIL import Image
+from PIL import Image, ImageFile
 import numpy as np
 import torch
 import random
 import torch.utils.data as data
+import torchvision
 import torchvision.transforms.functional as tf
+
+
+ImageFile.LOAD_TRUNCATED_IMAGES = True
+torchvision.set_image_backend('accimage')
 
 
 class LoadDataset(data.Dataset):
