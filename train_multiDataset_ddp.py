@@ -26,7 +26,6 @@ torchvision.set_image_backend('accimage')
 def train(opt, epoch, model, ad_net, data_loader_1, data_loader_2, data_loader_3, optimizer, optimizer_ad, scheduler,
           scheduler_ad, criterion, criterion_ce, logger, writer):
     t0 = time.time()
-    ad_loss = 0
     epoch_model_loss = AverageMeter()
     epoch_ad_loss = AverageMeter()
     epoch_total_loss = AverageMeter()
