@@ -24,9 +24,9 @@ torchvision.set_image_backend('accimage')
 
 
 def train(opt, epoch, model, ad_net, data_loader_1, data_loader_2, data_loader_3, optimizer, optimizer_ad, scheduler,
-          scheduler_ad, criterion,
-          criterion_ce, logger, writer):
+          scheduler_ad, criterion, criterion_ce, logger, writer):
     t0 = time.time()
+    ad_loss = 0
     epoch_model_loss = AverageMeter()
     epoch_ad_loss = AverageMeter()
     epoch_total_loss = AverageMeter()
@@ -57,6 +57,8 @@ def train(opt, epoch, model, ad_net, data_loader_1, data_loader_2, data_loader_3
             discriminator_out_real = ad_net(feature)
             ad_loss = get_ad_loss(discriminator_out_real, criterion_ce, label)
             total_loss = model_loss + opt.lambda_ad * ad_loss
+            reduced_ad_loss = reduce_mean(ad_loss, opt.nProcs)
+            epoch_ad_loss.update(reduced_ad_loss.item(), noisy1.size(0))
 
         # backward
         optimizer.zero_grad()
@@ -68,10 +70,8 @@ def train(opt, epoch, model, ad_net, data_loader_1, data_loader_2, data_loader_3
         # output
         dist.barrier()
         reduced_model_loss = reduce_mean(model_loss, opt.nProcs)
-        reduced_ad_loss = reduce_mean(ad_loss, opt.nProcs)
         reduced_total_loss = reduce_mean(total_loss, opt.nProcs)
         epoch_model_loss.update(reduced_model_loss.item(), noisy1.size(0))
-        epoch_ad_loss.update(reduced_ad_loss.item(), noisy1.size(0))
         epoch_total_loss.update(reduced_total_loss.item(), noisy1.size(0))
         if iteration % opt.print_freq == 0:
             ddp_logger_info(
@@ -132,10 +132,10 @@ def valid(opt, epoch, data_loader, model, criterion, logger, writer):
 def main():
     parser = argparse.ArgumentParser(description='PyTorch image denoising')
     # dataset settings
-    parser.add_argument('--data_set1', type=str, default='sidd', help='the exact dataset we want to train on')
-    parser.add_argument('--data_set2', type=str, default='renoir', help='the exact dataset we want to train on')
-    parser.add_argument('--data_set3', type=str, default='nind', help='the exact dataset we want to train on')
-    parser.add_argument('--data_set_test', type=str, default='rid2021', help='the exact dataset we want to train on')
+    parser.add_argument('--data_set1', type=str, default='sidd', help='the exact dataset 1 we want to train on')
+    parser.add_argument('--data_set2', type=str, default='renoir', help='the exact dataset 2 we want to train on')
+    parser.add_argument('--data_set3', type=str, default='nind', help='the exact dataset 3 we want to train on')
+    parser.add_argument('--data_set_test', type=str, default='rid2021', help='the exact dataset 4 we want to test on')
     parser.add_argument('--data_dir', type=str, default='/mnt/lustre/share/yangmingzhuo/processed',
                         help='the dataset dir')
     parser.add_argument('--batch_size', type=int, default=32, help='training batch size: 32')
@@ -260,7 +260,6 @@ def main():
 
     # optimizer and scheduler
     warmup_epochs = 3
-    # t_max = opt.nEpochs - warmup_epochs + opt.nEpochs / 2
     t_max = opt.nEpochs - warmup_epochs
     ddp_logger_info('Optimizer: Adam Warmup epochs: {}, Learning rate: {}, Scheduler: CosineAnnealingLR, T_max: {}'
                     .format(warmup_epochs, opt.lr, t_max), logger, opt.local_rank)
@@ -273,7 +272,7 @@ def main():
     scheduler_cosine_ad = optim.lr_scheduler.CosineAnnealingLR(optimizer_ad, t_max, eta_min=opt.lr_min_ad)
     scheduler = GradualWarmupScheduler(optimizer, multiplier=1, total_epoch=warmup_epochs,
                                        after_scheduler=scheduler_cosine)
-    scheduler_ad = GradualWarmupScheduler(optimizer, multiplier=1, total_epoch=warmup_epochs,
+    scheduler_ad = GradualWarmupScheduler(optimizer_ad, multiplier=1, total_epoch=warmup_epochs,
                                           after_scheduler=scheduler_cosine_ad)
     ddp_logger_info('scheduler={}'.format(scheduler), logger, opt.local_rank)
     ddp_logger_info('scheduler_ad={}'.format(scheduler_ad), logger, opt.local_rank)
@@ -288,10 +287,8 @@ def main():
             scheduler.step()
             scheduler_ad.step()
         ddp_logger_info('Resume start epoch: {}, Learning rate:{:.6f}, ad Learning rate:{:.6f}'.format(start_epoch,
-                                                                                                       scheduler.get_lr()[
-                                                                                                           0],
-                                                                                                       scheduler_ad.get_lr()[
-                                                                                                           0]),
+                                                                                                       scheduler.get_lr()[0],
+                                                                                                       scheduler_ad.get_lr()[0]),
                         logger, opt.local_rank)
     else:
         start_epoch = opt.start_iter

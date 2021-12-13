@@ -5,6 +5,7 @@ import torch
 import random
 import torch.utils.data as data
 import torchvision.transforms.functional as tf
+import h5py
 from torch.utils.data import DataLoader
 from prefetch_generator import BackgroundGenerator
 
@@ -112,3 +113,49 @@ class LoadMultiDataset(data.Dataset):
 
     def __len__(self):
         return len(self.img_paths)
+
+
+class LoadMultiH5Dataset(data.Dataset):
+
+    def __init__(self, src_path, patch_size=128, train=True):
+        self.path = src_path
+        self.h5f = h5py.File(self.path, 'r')
+        self.keys = list(self.h5f.keys())
+
+        self.patch_size = patch_size
+        self.train = train
+
+    def __getitem__(self, index):
+        key = self.keys[index]
+        img_data = np.array(self.h5f[key])
+
+        noisy = img_data[:, :, 0:3]
+        clean = img_data[:, :, 3:6]
+        patch_size = self.patch_size
+
+        noisy_img = tf.to_tensor(noisy)
+        clean_img = tf.to_tensor(clean)
+
+        if self.train:
+            # crop Patch
+            height, width = noisy_img.shape[1], clean_img.shape[2]
+            rr = random.randint(0, height - patch_size)
+            cc = random.randint(0, width - patch_size)
+            noisy_img = noisy_img[:, rr:rr + patch_size, cc:cc + patch_size]
+            clean_img = clean_img[:, rr:rr + patch_size, cc:cc + patch_size]
+            # data Augmentation
+            p = 0.5
+            if random.random() > p:
+                noisy_img = torch.rot90(noisy_img, dims=(1, 2))
+                clean_img = torch.rot90(clean_img, dims=(1, 2))
+            if random.random() > p:
+                noisy_img = noisy_img.flip(1)
+                clean_img = clean_img.flip(1)
+            if random.random() > p:
+                noisy_img = noisy_img.flip(2)
+                clean_img = clean_img.flip(2)
+
+        return noisy_img, clean_img
+
+    def __len__(self):
+        return len(self.keys)
