@@ -37,15 +37,14 @@ def train(opt, epoch, model, ad_net, data_loader_1, data_loader_2, data_loader_3
 
         # forward
         prediction, feature = model(input_data)
+        model_loss = criterion(prediction, target_data)
         if opt.lambda_ad == 0:
-            model_loss = criterion(prediction, target_data)
             total_loss = model_loss
         else:
             discriminator_out_real = ad_net(feature)
 
             # loss
             ad_loss = get_ad_loss(discriminator_out_real, label, opt.local_rank)
-            model_loss = criterion(prediction, target_data)
             total_loss = model_loss + opt.lambda_ad * ad_loss
 
         # backward
