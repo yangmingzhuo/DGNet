@@ -4,12 +4,15 @@ import numpy as np
 import torch
 import random
 import torch.utils.data as data
-import torchvision
 import torchvision.transforms.functional as tf
+from torch.utils.data import DataLoader
+from prefetch_generator import BackgroundGenerator
 
 
-ImageFile.LOAD_TRUNCATED_IMAGES = True
-torchvision.set_image_backend('accimage')
+class DataLoaderX(DataLoader):
+
+    def __iter__(self):
+        return BackgroundGenerator(super().__iter__())
 
 
 class LoadDataset(data.Dataset):

@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 
-def get_ad_loss(discriminator_out, label, local_rank):
+def get_ad_loss(discriminator_out, criterion, label):
     # generate ad_label
     ad_label1_index = torch.LongTensor(label[0], 1).fill_(0)
     ad_label1 = ad_label1_index.cuda()
@@ -12,6 +12,5 @@ def get_ad_loss(discriminator_out, label, local_rank):
     ad_label3 = ad_label3_index.cuda()
     ad_label = torch.cat([ad_label1, ad_label2, ad_label3], dim=0).view(-1)
 
-    criterion = nn.CrossEntropyLoss().cuda(device=local_rank)
     loss = criterion(discriminator_out, ad_label)
     return loss
