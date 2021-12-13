@@ -47,7 +47,6 @@ class Discriminator(nn.Module):
         )
         self.grl_layer = GRL(max_iter)
 
-
     def forward(self, feature):
         feature = self.gen_feature(feature)
         feature = feature.view(feature.size(0), -1)
