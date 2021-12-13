@@ -25,13 +25,14 @@ class GRL(torch.autograd.Function):
 class Discriminator(nn.Module):
     def __init__(self, max_iter):
         super(Discriminator, self).__init__()
-        self.conv3_1 = nn.Conv2d(512, 512, kernel_size=3, stride=2, padding=1, bias=False)
+        self.conv1 = nn.Conv2d(512, 512, kernel_size=3, stride=2, padding=1, bias=False)
+        self.conv2 = nn.Conv2d(512, 512, kernel_size=3, stride=2, padding=1, bias=False)
         self.avg_pool = nn.AvgPool2d(kernel_size=2, stride=2)
         self.gen_feature = nn.Sequential(
-            self.conv3_1,
+            self.conv1,
             nn.BatchNorm2d(512),
             nn.ReLU(inplace=True),
-            self.conv3_1,
+            self.conv2,
             nn.BatchNorm2d(512),
             nn.ReLU(inplace=True),
             self.avg_pool,
