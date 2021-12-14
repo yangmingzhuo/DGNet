@@ -1,4 +1,6 @@
 import glob
+import os.path
+
 from PIL import Image, ImageFile
 import numpy as np
 import torch
@@ -21,7 +23,7 @@ class LoadDataset(data.Dataset):
     def __init__(self, src_path, patch_size=128, train=True):
 
         self.path = src_path
-        files = glob.glob(src_path + '/*.png')
+        files = glob.glob(os.path.join(src_path, '*.png'))
         files.sort()
         self.img_paths = []
         for file_name in files:
@@ -67,19 +69,19 @@ class LoadMultiDataset(data.Dataset):
     def __init__(self, src_path1, src_path2, src_path3, patch_size=128, train=True):
         self.img_paths = []
 
-        files1 = glob.glob(src_path1 + '/*.png')
+        files1 = glob.glob(os.path.join(src_path1, '*.png'))
         files1.sort()
         self.len1 = len(files1)
         for file_name in files1:
             self.img_paths.append(file_name)
 
-        files2 = glob.glob(src_path2 + '/*.png')
+        files2 = glob.glob(os.path.join(src_path2, '*.png'))
         files2.sort()
         self.len2 = len(files2)
         for file_name in files2:
             self.img_paths.append(file_name)
 
-        files3 = glob.glob(src_path3 + '/*.png')
+        files3 = glob.glob(os.path.join(src_path3, '*.png'))
         files3.sort()
         self.len3 = len(files3)
         for file_name in files3:

@@ -94,7 +94,7 @@ def main():
     parser.add_argument('--data_set', type=str, default='sidd', help='the exact dataset we want to train on')
     parser.add_argument('--data_dir', type=str, default='/mnt/lustre/share/yangmingzhuo/processed',
                         help='the dataset dir')
-    parser.add_argument('--batch_size', type=int, default=32, help='training batch size: 32')
+    parser.add_argument('--batch_size', type=int, default=8, help='training batch size: 32')
     parser.add_argument('--patch_size', type=int, default=128, help='Size of cropped HR image')
     parser.add_argument('--test_batch_size', type=int, default=32, help='testing batch size, default=1')
     parser.add_argument('--test_patch_size', type=int, default=256, help='testing batch size, default=1')

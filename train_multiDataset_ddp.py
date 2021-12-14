@@ -127,7 +127,7 @@ def main():
     parser.add_argument('--data_set_test', type=str, default='rid2021', help='the exact dataset 4 we want to test on')
     parser.add_argument('--data_dir', type=str, default='/mnt/lustre/share/yangmingzhuo/processed',
                         help='the dataset dir')
-    parser.add_argument('--batch_size', type=int, default=32, help='training batch size: 32')
+    parser.add_argument('--batch_size', type=int, default=8, help='training batch size: 32')
     parser.add_argument('--patch_size', type=int, default=128, help='Size of cropped HR image')
     parser.add_argument('--test_batch_size', type=int, default=32, help='testing batch size, default=1')
     parser.add_argument('--test_patch_size', type=int, default=256, help='testing patch size, default=1')
@@ -216,9 +216,14 @@ def main():
         'Train dataset length: {} 1:{} 2:{} 3:{}'.format(len(train_data_loader), train_set.len1, train_set.len2,
                                                          train_set.len3), logger, opt.local_rank)
 
-    val_set = LoadDataset(src_path=os.path.join(opt.data_dir, opt.data_set_test, 'test'),
-                          patch_size=opt.test_patch_size,
-                          train=False)
+    if opt.use_h5 == 0:
+        val_set = LoadDataset(src_path=os.path.join(opt.data_dir, opt.data_set_test, 'test'),
+                              patch_size=opt.test_patch_size,
+                              train=False)
+    else:
+        val_set = LoadDataset(src_path=os.path.join(opt.data_dir, opt.data_set_test, 'test.h5'),
+                              patch_size=opt.test_patch_size,
+                              train=False)
     val_sampler = DistributedSampler(val_set)
     val_data_loader = DataLoaderX(dataset=val_set, batch_size=opt.test_batch_size, shuffle=False,
                                  num_workers=opt.num_workers, pin_memory=True, sampler=val_sampler)
