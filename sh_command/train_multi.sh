@@ -51,5 +51,4 @@ nohup python -m torch.distributed.launch --nproc_per_node=4 --master_port=10315 
     --data_set_test='sidd' \
     --batch_size=8 \
     --lambda_ad=0 \
-    --use_h5=0 \
     --exp_id=1 &

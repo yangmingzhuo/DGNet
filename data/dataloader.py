@@ -133,15 +133,17 @@ class LoadH5Dataset(data.Dataset):
 
     def __init__(self, src_path, patch_size=128, train=True):
         self.path = src_path
-        self.h5f = h5py.File(self.path, 'r')
-        self.keys = list(self.h5f.keys())
+        h5f = h5py.File(self.path, 'r')
+        self.keys = list(h5f.keys())
 
         self.patch_size = patch_size
         self.train = train
 
     def __getitem__(self, index):
+        h5f = h5py.File(self.src_path, 'r')
         key = self.keys[index]
-        img_data = np.array(self.h5f[key])
+        img_data = np.array(h5f[key])
+        h5f.close()
 
         noisy = img_data[:, :, 0:3]
         clean = img_data[:, :, 3:6]
@@ -215,7 +217,7 @@ class LoadMultiH5Dataset(data.Dataset):
             h5f2.close()
         else:
             h5f3 = h5py.File(self.src_path3, 'r')
-            key = self.keys2[index - self.len2 - self.len1]
+            key = self.keys3[index - self.len2 - self.len1]
             img_data = np.array(h5f3[key])
             label = 3
             h5f3.close()

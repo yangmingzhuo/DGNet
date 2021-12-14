@@ -124,13 +124,13 @@ def main():
                                                                              opt.batch_size, opt.patch_size))
     train_set = LoadDataset(src_path=os.path.join(opt.data_dir, opt.data_set, 'train'), patch_size=opt.patch_size,
                             train=True)
-    train_data_loader = DataLoader(dataset=train_set, batch_size=opt.batch_size, shuffle=True,
+    train_data_loader = DataLoaderX(dataset=train_set, batch_size=opt.batch_size, shuffle=True,
                                    num_workers=opt.num_workers, pin_memory=True)
     logger.info('Train dataset length: {}'.format(len(train_data_loader)))
 
     val_set = LoadDataset(src_path=os.path.join(opt.data_dir, opt.data_set, 'test'), patch_size=opt.test_patch_size,
                           train=False)
-    val_data_loader = DataLoader(dataset=val_set, batch_size=opt.test_batch_size, shuffle=False,
+    val_data_loader = DataLoaderX(dataset=val_set, batch_size=opt.test_batch_size, shuffle=False,
                                  num_workers=opt.num_workers, pin_memory=True)
     logger.info('Validation dataset length: {}'.format(len(val_data_loader)))
 

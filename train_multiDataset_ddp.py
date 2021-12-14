@@ -131,7 +131,6 @@ def main():
     parser.add_argument('--patch_size', type=int, default=128, help='Size of cropped HR image')
     parser.add_argument('--test_batch_size', type=int, default=32, help='testing batch size, default=1')
     parser.add_argument('--test_patch_size', type=int, default=256, help='testing patch size, default=1')
-    parser.add_argument('--use_h5', type=int, default=0, help='whether to use h5')
 
     # training settings
     parser.add_argument('--nEpochs', type=int, default=150, help='number of epochs to train for')
@@ -197,18 +196,11 @@ def main():
                                                                                          opt.batch_size,
                                                                                          opt.patch_size), logger,
                     opt.local_rank)
-    if opt.use_h5 == 0:
-        train_set = LoadMultiDataset(src_path1=os.path.join(opt.data_dir, opt.data_set1, 'train'),
-                                     src_path2=os.path.join(opt.data_dir, opt.data_set2, 'train'),
-                                     src_path3=os.path.join(opt.data_dir, opt.data_set3, 'train'),
-                                     patch_size=opt.patch_size,
-                                     train=True)
-    else:
-        train_set = LoadMultiH5Dataset(src_path1=os.path.join(opt.data_dir, opt.data_set1, 'train.h5'),
-                                  src_path2=os.path.join(opt.data_dir, opt.data_set2, 'train.h5'),
-                                  src_path3=os.path.join(opt.data_dir, opt.data_set3, 'train.h5'),
-                                  patch_size=opt.patch_size,
-                                  train=True)
+    train_set = LoadMultiDataset(src_path1=os.path.join(opt.data_dir, opt.data_set1, 'train'),
+                                 src_path2=os.path.join(opt.data_dir, opt.data_set2, 'train'),
+                                 src_path3=os.path.join(opt.data_dir, opt.data_set3, 'train'),
+                                 patch_size=opt.patch_size,
+                                 train=True)
     train_sampler = DistributedSampler(train_set)
     train_data_loader = DataLoaderX(dataset=train_set, batch_size=opt.batch_size,
                                    num_workers=opt.num_workers, pin_memory=True, sampler=train_sampler)
@@ -216,14 +208,9 @@ def main():
         'Train dataset length: {} 1:{} 2:{} 3:{}'.format(len(train_data_loader), train_set.len1, train_set.len2,
                                                          train_set.len3), logger, opt.local_rank)
 
-    if opt.use_h5 == 0:
-        val_set = LoadDataset(src_path=os.path.join(opt.data_dir, opt.data_set_test, 'test'),
-                              patch_size=opt.test_patch_size,
-                              train=False)
-    else:
-        val_set = LoadH5Dataset(src_path=os.path.join(opt.data_dir, opt.data_set_test, 'test.h5'),
-                              patch_size=opt.test_patch_size,
-                              train=False)
+    val_set = LoadDataset(src_path=os.path.join(opt.data_dir, opt.data_set_test, 'test'),
+                          patch_size=opt.test_patch_size,
+                          train=False)
     val_sampler = DistributedSampler(val_set)
     val_data_loader = DataLoaderX(dataset=val_set, batch_size=opt.test_batch_size, shuffle=False,
                                  num_workers=opt.num_workers, pin_memory=True, sampler=val_sampler)
