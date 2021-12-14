@@ -16,8 +16,12 @@ from skimage.measure import compare_psnr
 from model.ELD_UNet import ELD_UNet
 from data.dataloader import *
 from utils.util import *
+import torchvision
 from utils.checkpoint import *
 from utils.gen_mat import *
+
+ImageFile.LOAD_TRUNCATED_IMAGES = True
+torchvision.set_image_backend('accimage')
 
 
 def train(opt, epoch, model, data_loader, optimizer, scheduler, criterion, logger, writer, local_rank):
@@ -154,14 +158,14 @@ def main():
     train_set = LoadDataset(src_path=os.path.join(opt.data_dir, opt.data_set, 'train'), patch_size=opt.patch_size,
                             train=True)
     train_sampler = DistributedSampler(train_set)
-    train_data_loader = DataLoader(dataset=train_set, batch_size=opt.batch_size,
+    train_data_loader = DataLoaderX(dataset=train_set, batch_size=opt.batch_size,
                                    num_workers=opt.num_workers, pin_memory=True, sampler=train_sampler)
     ddp_logger_info('Train dataset length: {}'.format(len(train_data_loader)), logger, opt.local_rank)
 
     val_set = LoadDataset(src_path=os.path.join(opt.data_dir, opt.data_set, 'test'), patch_size=opt.test_patch_size,
                           train=False)
     val_sampler = DistributedSampler(val_set)
-    val_data_loader = DataLoader(dataset=val_set, batch_size=opt.test_batch_size, shuffle=False,
+    val_data_loader = DataLoaderX(dataset=val_set, batch_size=opt.test_batch_size, shuffle=False,
                                  num_workers=opt.num_workers, pin_memory=True, sampler=val_sampler)
     ddp_logger_info('Validation dataset length: {}'.format(len(val_data_loader)), logger, opt.local_rank)
 

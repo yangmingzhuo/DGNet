@@ -45,7 +45,7 @@ def save_model(save_path, epoch, model, optimizer, psnr_best, logger):
     logger.info('||==> Epoch={}, save model and optimizer, psnr_best={}'.format(epoch, psnr_best))
 
 
-def save_model(save_path, epoch, model, ad_net, optimizer, optimizer_ad, psnr_best, logger):
+def save_model_2(save_path, epoch, model, ad_net, optimizer, optimizer_ad, psnr_best, logger):
     check_point_params = {}
     if isinstance(model, nn.DataParallel):
         check_point_params["model"] = model.module.state_dict()
@@ -77,7 +77,7 @@ def load_model(checkpoint_path, model, optimizer, logger, local_rank):
     return model, start_epoch, optimizer, psnr_best
 
 
-def load_model(checkpoint_path, model, ad_net, optimizer, optimizer_ad, logger, local_rank):
+def load_model_2(checkpoint_path, model, ad_net, optimizer, optimizer_ad, logger, local_rank):
     check_point_params = torch.load(checkpoint_path)
     model_state = check_point_params["model"]
     ad_net_state = check_point_params["model"]
