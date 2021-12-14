@@ -59,7 +59,7 @@ def prepare_renoir_data(src_path, dst_path, patch_size):
         full = np.array(cv2.imread(full_path[0])).astype(np.float32)
         gt = (ref + full) / 2
         gt = np.clip(gt, 0, 255).astype(np.uint8)
-        pos_list = get_pos_list(os.path.join(scene_path, 'patch_list.txt'))
+        # pos_list = get_pos_list(os.path.join(scene_path, 'patch_list.txt'))
         for img_num in range(len(noisy_paths)):
             noisy = np.array(cv2.imread(noisy_paths[img_num]))
             img = np.concatenate([noisy, gt], 2)

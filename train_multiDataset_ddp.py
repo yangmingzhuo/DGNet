@@ -11,7 +11,6 @@ from torch.utils.data.distributed import DistributedSampler
 from warmup_scheduler import GradualWarmupScheduler
 from tensorboardX import SummaryWriter
 from skimage.measure import compare_psnr
-from itertools import cycle
 from utils.util import *
 from model.DG_UNet import *
 from loss.loss import *
@@ -19,11 +18,11 @@ from data.dataloader import *
 from utils.gen_mat import *
 from utils.checkpoint import *
 
-ImageFile.LOAD_TRUNCATED_IMAGES = True
-torchvision.set_image_backend('accimage')
+# ImageFile.LOAD_TRUNCATED_IMAGES = True
+# torchvision.set_image_backend('accimage')
 
 
-def train(opt, epoch, model, ad_net, data_loader_1, data_loader_2, data_loader_3, optimizer, optimizer_ad, scheduler,
+def train(opt, epoch, model, ad_net, data_loader, optimizer, optimizer_ad, scheduler,
           scheduler_ad, criterion, criterion_ce, logger, writer):
     t0 = time.time()
     epoch_model_loss = AverageMeter()
@@ -31,33 +30,24 @@ def train(opt, epoch, model, ad_net, data_loader_1, data_loader_2, data_loader_3
     epoch_total_loss = AverageMeter()
     model.train()
     ad_net.train()
-    t1 = time.time()
-    for iteration, batch in enumerate(zip(cycle(data_loader_1), cycle(data_loader_2), data_loader_3)):
-        t2 = time.time() - t1
-        ddp_logger_info('{}\n'.format(t2), logger, opt.local_rank)
+    for iteration, batch in enumerate(data_loader):
         # load data
-        (noisy1, target1), (noisy2, target2), (noisy3, target3) = batch
-        noisy1, target1 = noisy1.cuda(opt.local_rank, non_blocking=True), target1.cuda(opt.local_rank,
-                                                                                       non_blocking=True)
-        noisy2, target2 = noisy2.cuda(opt.local_rank, non_blocking=True), target2.cuda(opt.local_rank,
-                                                                                       non_blocking=True)
-        noisy3, target3 = noisy3.cuda(opt.local_rank, non_blocking=True), target3.cuda(opt.local_rank,
-                                                                                       non_blocking=True)
-        label = [noisy1.shape[0], noisy2.shape[0], noisy3.shape[0]]
-        input_data = torch.cat([noisy1, noisy2, noisy3], dim=0)
-        target_data = torch.cat([target1, target2, target3], dim=0)
+        (noisy, target, label) = batch
+        # ddp_logger_info('{}\n'.format(label), logger, opt.local_rank)
+        noisy, target = noisy.cuda(opt.local_rank, non_blocking=True), target.cuda(opt.local_rank,
+                                                                                   non_blocking=True)
 
         # forward
-        prediction = model(input_data)
-        model_loss = criterion(prediction, target_data)
+        prediction = model(noisy)
+        model_loss = criterion(prediction, target)
         if opt.lambda_ad == 0:
             total_loss = model_loss
         else:
             discriminator_out_real = ad_net(prediction)
-            ad_loss = get_ad_loss(discriminator_out_real, criterion_ce, label)
+            ad_loss = get_ad_loss(discriminator_out_real, criterion_ce)
             total_loss = model_loss + opt.lambda_ad * ad_loss
             reduced_ad_loss = reduce_mean(ad_loss, opt.nProcs)
-            epoch_ad_loss.update(reduced_ad_loss.item(), noisy1.size(0))
+            epoch_ad_loss.update(reduced_ad_loss.item(), noisy.size(0))
 
         # backward
         optimizer.zero_grad()
@@ -70,16 +60,15 @@ def train(opt, epoch, model, ad_net, data_loader_1, data_loader_2, data_loader_3
         dist.barrier()
         reduced_model_loss = reduce_mean(model_loss, opt.nProcs)
         reduced_total_loss = reduce_mean(total_loss, opt.nProcs)
-        epoch_model_loss.update(reduced_model_loss.item(), noisy1.size(0))
-        epoch_total_loss.update(reduced_total_loss.item(), noisy1.size(0))
+        epoch_model_loss.update(reduced_model_loss.item(), noisy.size(0))
+        epoch_total_loss.update(reduced_total_loss.item(), noisy.size(0))
         if iteration % opt.print_freq == 0:
             ddp_logger_info(
                 'Train epoch: [{:d}/{:d}]\titeration: [{:d}/{:d}]\tlr={:.6f}\tad_lr={:.6f}\tl1_loss={:.4f}\tad_loss={:.4f}\ttotal_loss={:.4f}'
-                    .format(epoch, opt.nEpochs, iteration, len(data_loader_3), scheduler.get_lr()[0],
+                    .format(epoch, opt.nEpochs, iteration, len(data_loader), scheduler.get_lr()[0],
                             scheduler_ad.get_lr()[0],
                             epoch_model_loss.avg, epoch_ad_loss.avg, epoch_total_loss.avg),
                 logger, opt.local_rank)
-        t1 = time.time()
 
     ddp_writer_add_scalar('Train_L1_loss', epoch_model_loss.avg, epoch, writer, opt.local_rank)
     ddp_writer_add_scalar('Train_ad_loss', epoch_ad_loss.avg, epoch, writer, opt.local_rank)
@@ -104,7 +93,7 @@ def valid(opt, epoch, data_loader, model, criterion, logger, writer):
         psnr = AverageMeter()
         noisy, target = noisy.cuda(opt.local_rank, non_blocking=True), target.cuda(opt.local_rank, non_blocking=True)
         with torch.no_grad():
-            prediction, _ = model(noisy)
+            prediction = model(noisy)
             prediction = torch.clamp(prediction, 0.0, 1.0)
 
         loss = criterion(prediction, target)
@@ -140,8 +129,8 @@ def main():
     parser.add_argument('--batch_size', type=int, default=32, help='training batch size: 32')
     parser.add_argument('--patch_size', type=int, default=128, help='Size of cropped HR image')
     parser.add_argument('--test_batch_size', type=int, default=32, help='testing batch size, default=1')
-    parser.add_argument('--test_patch_size', type=int, default=256, help='testing batch size, default=1')
-    parser.add_argument('--use_h5', type=int, )
+    parser.add_argument('--test_patch_size', type=int, default=256, help='testing patch size, default=1')
+    parser.add_argument('--use_h5', type=int, default=0, help='whether to use h5')
 
     # training settings
     parser.add_argument('--nEpochs', type=int, default=150, help='number of epochs to train for')
@@ -207,37 +196,22 @@ def main():
                                                                                          opt.batch_size,
                                                                                          opt.patch_size), logger,
                     opt.local_rank)
-    # train_set_1 = LoadDataset(src_path=os.path.join(opt.data_dir, opt.data_set1, 'train'), patch_size=opt.patch_size,
-    #                           train=True)
-    # train_set_2 = LoadDataset(src_path=os.path.join(opt.data_dir, opt.data_set2, 'train'), patch_size=opt.patch_size,
-    #                           train=True)
-    # train_set_3 = LoadDataset(src_path=os.path.join(opt.data_dir, opt.data_set3, 'train'), patch_size=opt.patch_size,
-    #                           train=True)
-    train_set_1 = LoadH5Dataset(src_path=os.path.join(opt.data_dir, opt.data_set1, 'train.h5'), patch_size=opt.patch_size,
-                              train=True)
-    train_set_2 = LoadH5Dataset(src_path=os.path.join(opt.data_dir, opt.data_set2, 'train.h5'), patch_size=opt.patch_size,
-                              train=True)
-    train_set_3 = LoadH5Dataset(src_path=os.path.join(opt.data_dir, opt.data_set3, 'train.h5'), patch_size=opt.patch_size,
-                              train=True)
-    train_sampler_1 = DistributedSampler(train_set_1)
-    train_data_loader_1 = DataLoaderX(dataset=train_set_1, batch_size=opt.batch_size,
-                                     num_workers=opt.num_workers, pin_memory=True, sampler=train_sampler_1)
-    train_sampler_2 = DistributedSampler(train_set_2)
-    train_data_loader_2 = DataLoaderX(dataset=train_set_2, batch_size=opt.batch_size,
-                                     num_workers=opt.num_workers, pin_memory=True, sampler=train_sampler_2)
-    train_sampler_3 = DistributedSampler(train_set_3)
-    train_data_loader_3 = DataLoaderX(dataset=train_set_3, batch_size=opt.batch_size,
-                                     num_workers=opt.num_workers, pin_memory=True, sampler=train_sampler_3)
-    train_data_loader_1, train_data_loader_2, train_data_loader_3 = dataset_sort(train_data_loader_1,
-                                                                                 train_data_loader_2,
-                                                                                 train_data_loader_3)
-    opt.train_data_len_1 = len(train_data_loader_1)
-    opt.train_data_len_2 = len(train_data_loader_2)
-    opt.train_data_len_3 = len(train_data_loader_3)
-    opt.max_train_data_len = max(opt.train_data_len_1, opt.train_data_len_2, opt.train_data_len_3)
-    ddp_logger_info('Train dataset 1 length: {}'.format(opt.train_data_len_1), logger, opt.local_rank)
-    ddp_logger_info('Train dataset 2 length: {}'.format(opt.train_data_len_2), logger, opt.local_rank)
-    ddp_logger_info('Train dataset 3 length: {}'.format(opt.train_data_len_3), logger, opt.local_rank)
+    if opt.use_h5 == 0:
+        train_set = LoadMultiDataset(src_path1=os.path.join(opt.data_dir, opt.data_set1, 'train'),
+                                     src_path2=os.path.join(opt.data_dir, opt.data_set2, 'train'),
+                                     src_path3=os.path.join(opt.data_dir, opt.data_set3, 'train'),
+                                     patch_size=opt.patch_size,
+                                     train=True)
+    else:
+        train_set = LoadH5Dataset(src_path1=os.path.join(opt.data_dir, opt.data_set1, 'train.h5'),
+                                  src_path2=os.path.join(opt.data_dir, opt.data_set2, 'train.h5'),
+                                  src_path3=os.path.join(opt.data_dir, opt.data_set3, 'train.h5'),
+                                  patch_size=opt.patch_size,
+                                  train=True)
+    train_sampler = DistributedSampler(train_set)
+    train_data_loader = DataLoader(dataset=train_set, batch_size=opt.batch_size,
+                                    num_workers=opt.num_workers, pin_memory=True, sampler=train_sampler)
+    ddp_logger_info('Train dataset length: {} 1:{} 2:{} 3:{}'.format(len(train_data_loader), train_set.len1, train_set.len2, train_set.len3), logger, opt.local_rank)
 
     val_set = LoadDataset(src_path=os.path.join(opt.data_dir, opt.data_set_test, 'test'),
                           patch_size=opt.test_patch_size,
@@ -250,7 +224,7 @@ def main():
     # load network
     ddp_logger_info('Building model {}'.format(opt.model_type), logger, opt.local_rank)
     model = DG_UNet()
-    ad_net = Discriminator(opt.nEpochs * opt.max_train_data_len)
+    ad_net = Discriminator(opt.nEpochs * len(train_data_loader))
 
     ddp_logger_info("Push model to distribute data parallel!", logger, opt.local_rank)
     model.cuda(device=opt.local_rank)
@@ -293,8 +267,10 @@ def main():
             scheduler.step()
             scheduler_ad.step()
         ddp_logger_info('Resume start epoch: {}, Learning rate:{:.6f}, ad Learning rate:{:.6f}'.format(start_epoch,
-                                                                                                       scheduler.get_lr()[0],
-                                                                                                       scheduler_ad.get_lr()[0]),
+                                                                                                       scheduler.get_lr()[
+                                                                                                           0],
+                                                                                                       scheduler_ad.get_lr()[
+                                                                                                           0]),
                         logger, opt.local_rank)
     else:
         start_epoch = opt.start_iter
@@ -305,15 +281,13 @@ def main():
 
     # training
     for epoch in range(start_epoch, opt.nEpochs + 1):
-        train_sampler_1.set_epoch(epoch)
-        train_sampler_2.set_epoch(epoch)
-        train_sampler_3.set_epoch(epoch)
+        train_sampler.set_epoch(epoch)
         val_sampler.set_epoch(epoch)
         scheduler.step()
         scheduler_ad.step()
 
         # training
-        train(opt, epoch, model, ad_net, train_data_loader_1, train_data_loader_2, train_data_loader_3, optimizer,
+        train(opt, epoch, model, ad_net, train_data_loader, optimizer,
               optimizer_ad,
               scheduler, scheduler_ad,
               criterion, criterion_ce, logger, writer)

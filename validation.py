@@ -36,7 +36,7 @@ def valid(opt, data_loader, model, logger):
         for i in range(prediction.shape[0]):
             psnr_val.update(compare_psnr(prediction[i, :, :, :], target[i, :, :, :], data_range=1.0), 1)
 
-            if opt.save_imgs and iteration % 10 == 0:
+            if opt.save_imgs == 1 and iteration % 10 == 0:
                 img = np.concatenate([noisy_num[i, :, :, :], prediction_num[i, :, :, :], target_num[i, :, :, :]], 1)
                 save_file = os.path.join(os.path.dirname(opt.pretrained), '%04d_%02d.png' % (iteration + 1, i + 1))
                 cv2.imwrite(save_file, cv2.cvtColor(img_as_ubyte(img), cv2.COLOR_RGB2BGR))
