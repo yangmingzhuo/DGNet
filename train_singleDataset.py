@@ -113,9 +113,8 @@ def main():
     log_folder = os.path.join(opt.log_dir, "model_{}_gpu_{}_ds_{}_ps_{}_bs_{}_ep_{}_lr_{}_lr_min_{}_exp_id_{}"
                               .format(opt.model_type, opt.gpus, opt.data_set, opt.patch_size, opt.batch_size,
                                       opt.nEpochs, opt.lr, opt.lr_min, opt.exp_id))
-    if opt.pretrain_model == '':
-        output_process(log_folder, 'd')
-        checkpoint_folder = make_dir(os.path.join(log_folder, 'checkpoint'))
+    output_process(log_folder)
+    checkpoint_folder = make_dir(os.path.join(log_folder, 'checkpoint'))
     writer = SummaryWriter(log_folder)
     logger = get_logger(log_folder, 'DGNet_log')
     logger.info(opt)
@@ -183,8 +182,7 @@ def main():
         # training
         train(opt, epoch, model, train_data_loader, optimizer, scheduler, criterion, logger, writer)
         # validation
-        if epoch > 100 or epoch < 3 or epoch % 5 == 0:
-            psnr = valid(opt, epoch, val_data_loader, model, criterion, logger, writer)
+        psnr = valid(opt, epoch, val_data_loader, model, criterion, logger, writer)
 
         # save model
         save_model(os.path.join(checkpoint_folder, "model_latest.pth"), epoch, model, optimizer, psnr_best, logger)

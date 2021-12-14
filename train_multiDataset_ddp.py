@@ -204,7 +204,7 @@ def main():
                                      patch_size=opt.patch_size,
                                      train=True)
     else:
-        train_set = LoadH5Dataset(src_path1=os.path.join(opt.data_dir, opt.data_set1, 'train.h5'),
+        train_set = LoadMultiH5Dataset(src_path1=os.path.join(opt.data_dir, opt.data_set1, 'train.h5'),
                                   src_path2=os.path.join(opt.data_dir, opt.data_set2, 'train.h5'),
                                   src_path3=os.path.join(opt.data_dir, opt.data_set3, 'train.h5'),
                                   patch_size=opt.patch_size,
@@ -221,7 +221,7 @@ def main():
                               patch_size=opt.test_patch_size,
                               train=False)
     else:
-        val_set = LoadDataset(src_path=os.path.join(opt.data_dir, opt.data_set_test, 'test.h5'),
+        val_set = LoadH5Dataset(src_path=os.path.join(opt.data_dir, opt.data_set_test, 'test.h5'),
                               patch_size=opt.test_patch_size,
                               train=False)
     val_sampler = DistributedSampler(val_set)

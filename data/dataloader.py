@@ -178,15 +178,15 @@ class LoadH5Dataset(data.Dataset):
 class LoadMultiH5Dataset(data.Dataset):
 
     def __init__(self, src_path1, src_path2, src_path3, patch_size=128, train=True):
-        self.path = src_path1
-        self.h5f1 = h5py.File(self.path, 'r')
-        self.keys1 = list(self.h5f1.keys())
-        self.path = src_path2
-        self.h5f2 = h5py.File(self.path, 'r')
-        self.keys2 = list(self.h5f2.keys())
-        self.path = src_path3
-        self.h5f3 = h5py.File(self.path, 'r')
-        self.keys3 = list(self.h5f3.keys())
+        self.src_path1 = src_path1
+        h5f1 = h5py.File(src_path1, 'r')
+        self.keys1 = list(h5f1.keys())
+        self.src_path2 = src_path2
+        h5f2 = h5py.File(src_path2, 'r')
+        self.keys2 = list(h5f2.keys())
+        self.src_path3 = src_path3
+        h5f3 = h5py.File(src_path3, 'r')
+        self.keys3 = list(h5f3.keys())
 
         self.len1 = len(self.keys1)
         self.len2 = len(self.keys2)
@@ -197,16 +197,19 @@ class LoadMultiH5Dataset(data.Dataset):
 
     def __getitem__(self, index):
         if index < self.len1:
+            h5f1 = h5py.File(self.src_path1, 'r')
             key = self.keys1[index]
-            img_data = np.array(self.h5f1[key])
+            img_data = np.array(h5f1[key])
             label = 1
         elif index < self.len2 + self.len1:
+            h5f2 = h5py.File(self.src_path2, 'r')
             key = self.keys2[index - self.len1]
-            img_data = np.array(self.h5f2[key])
+            img_data = np.array(h5f2[key])
             label = 2
         else:
+            h5f3 = h5py.File(self.src_path3, 'r')
             key = self.keys2[index - self.len2 - self.len1]
-            img_data = np.array(self.h5f2[key])
+            img_data = np.array(h5f3[key])
             label = 3
 
         noisy = img_data[:, :, 0:3]
@@ -238,4 +241,4 @@ class LoadMultiH5Dataset(data.Dataset):
         return noisy_img, clean_img, label
 
     def __len__(self):
-        return len(self.img_paths1) + len(self.img_paths2) + len(self.img_paths3)
+        return self.len1 + self.len2 + self.len3
