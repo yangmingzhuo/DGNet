@@ -181,12 +181,17 @@ class LoadMultiH5Dataset(data.Dataset):
         self.src_path1 = src_path1
         h5f1 = h5py.File(src_path1, 'r')
         self.keys1 = list(h5f1.keys())
+        h5f1.close()
+
         self.src_path2 = src_path2
         h5f2 = h5py.File(src_path2, 'r')
         self.keys2 = list(h5f2.keys())
+        h5f2.close()
+
         self.src_path3 = src_path3
         h5f3 = h5py.File(src_path3, 'r')
         self.keys3 = list(h5f3.keys())
+        h5f3.close()
 
         self.len1 = len(self.keys1)
         self.len2 = len(self.keys2)
@@ -201,16 +206,19 @@ class LoadMultiH5Dataset(data.Dataset):
             key = self.keys1[index]
             img_data = np.array(h5f1[key])
             label = 1
+            h5f1.close()
         elif index < self.len2 + self.len1:
             h5f2 = h5py.File(self.src_path2, 'r')
             key = self.keys2[index - self.len1]
             img_data = np.array(h5f2[key])
             label = 2
+            h5f2.close()
         else:
             h5f3 = h5py.File(self.src_path3, 'r')
             key = self.keys2[index - self.len2 - self.len1]
             img_data = np.array(h5f3[key])
             label = 3
+            h5f3.close()
 
         noisy = img_data[:, :, 0:3]
         clean = img_data[:, :, 3:6]

@@ -175,9 +175,9 @@ def main():
     parser = argparse.ArgumentParser(description='PyTorch prepare test data')
     parser.add_argument('--patch_size', type=int, default=256, help='size of cropped image')
     parser.add_argument('--data_set', type=str, default='sidd', help='the dataset to crop')
-    parser.add_argument('--src_dir', type=str, default='/home/SENSETIME/yangmingzhuo/Documents/ECCV/split_dataset/',
+    parser.add_argument('--src_dir', type=str, default='/mnt/lustre/share/yangmingzhuo/split_dataset',
                         help='the path of dataset dir')
-    parser.add_argument('--dst_dir', type=str, default='/home/SENSETIME/yangmingzhuo/Documents/ECCV/processed/',
+    parser.add_argument('--dst_dir', type=str, default='/mnt/lustre/share/yangmingzhuo/processed',
                         help='the path of destination dir')
     parser.add_argument('--seed', type=int, default=0, help='random seed to use default=0')
     opt = parser.parse_args()

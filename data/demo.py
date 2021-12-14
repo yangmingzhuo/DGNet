@@ -1,5 +1,7 @@
-import numpy as np
-import torch
+import os
+import glob
 
-a = torch.Tensor([0])
-print(a)
+path = '/home/SENSETIME/yangmingzhuo/Documents/ECCV/processed/renoir/test'
+paths = glob.glob('/home/SENSETIME/yangmingzhuo/Documents/ECCV/processed/renoir/test/*')
+for p in paths:
+    p.replace('Mi3_Aligned_Batch_001_img_001_patch_001')

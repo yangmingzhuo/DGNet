@@ -26,6 +26,19 @@ polyu_train_list = ['Canon5D2_bag', 'Canon5D2_bicyc', 'Canon5D2_circu', 'Canon5D
 polyu_test_list = ['Canon5D2_chair', 'Canon5D2_recie', 'Canon80D_ball', 'Canon600_water', 'Nikon800_desk',
                    'Nikon800_plant', 'Nikon800_carbi', 'SonyA7II_book']
 
+renoir_list = ['Batch_001', 'Batch_004', 'Batch_009', 'Batch_013', 'Batch_019', 'Batch_020', 'Batch_026', 'Batch_035']
+
+
+def split(full_list, shuffle=False, ratio=0.2):
+    sublist_test = []
+    sublist_train = []
+    for i in full_list:
+        if i in renoir_list:
+            sublist_test.append(i)
+        else:
+            sublist_train.append(i)
+    return sublist_test, sublist_train
+
 
 def prepare_sidd_data(src_path_test, src_path_train, dst_path):
     dst_path = make_dir(os.path.join(dst_path, 'sidd'))
@@ -57,7 +70,7 @@ def prepare_renoir_data(src_path, dst_path):
 
         # divide the train and test data in random
         scene_path_test, scene_path_train = split(scene_paths, shuffle=True)
-
+        print('test scene:', scene_path_test)
         # prepare training data
         print('RENOIR train data processing...')
         for scene_num, src_scene_name in enumerate(tqdm(scene_path_train), 0):
@@ -180,7 +193,7 @@ def prepare_rid2021_data(src_path, dst_path):
 def main():
     parser = argparse.ArgumentParser(description='PyTorch data split')
     parser.add_argument('--data_set', type=str, default='sidd', help='the dataset to crop')
-    parser.add_argument('--data_set_dir', type=str, default='/home/SENSETIME/yangmingzhuo/Documents/ECCV/data/',
+    parser.add_argument('--data_set_dir', type=str, default='/home/SENSETIME/yangmingzhuo/Documents/ECCV/data',
                         help='the dataset dir')
     parser.add_argument('--dst_dir', type=str, default='/home/SENSETIME/yangmingzhuo/Documents/ECCV/split_dataset/',
                         help='the destination dir')
