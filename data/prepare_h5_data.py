@@ -41,7 +41,7 @@ def main():
     src_path = "/mnt/lustre/share/yangmingzhuo/processed"
 
     sidd_src_path = os.path.join(src_path, 'sidd')
-    renoir_src_path = os.path.join(src_path, 'sidd')
+    renoir_src_path = os.path.join(src_path, 'renoir')
     nind_src_path = os.path.join(src_path, 'nind')
     rid2021_src_path = os.path.join(src_path, 'rid2021_v2')
     print("start...sidd")
@@ -50,12 +50,12 @@ def main():
     print("start...renoir")
     gen_h5_dataset(renoir_src_path)
     print('end...renoir')
-    print("start...nind")
-    gen_h5_dataset(nind_src_path)
-    print('end...nind')
-    print("start...rid2021")
-    gen_h5_dataset(rid2021_src_path)
-    print('end...rid2021')
+    # print("start...nind")
+    # gen_h5_dataset(nind_src_path)
+    # print('end...nind')
+    # print("start...rid2021")
+    # gen_h5_dataset(rid2021_src_path)
+    # print('end...rid2021')
 
 
 if __name__ == "__main__":

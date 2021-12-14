@@ -12,9 +12,11 @@ from data.dataloader import *
 from utils.util import *
 from utils.checkpoint import *
 from utils.gen_mat import *
+import cv2
+from skimage import img_as_ubyte
 
 
-def valid(data_loader, model, logger):
+def valid(opt, data_loader, model, logger):
     t0 = time.time()
     model.eval()
     psnr_val = AverageMeter()
@@ -30,6 +32,12 @@ def valid(data_loader, model, logger):
         for i in range(prediction.shape[0]):
             psnr_val.update(compare_psnr(prediction[i, :, :, :], target[i, :, :, :], data_range=1.0), 1)
 
+            if opt.save_imgs and iteration % 10 == 0:
+                noisy = noisy.data.cpu().numpy().astype(np.float32)
+                np.concatenate([noisy, prediction, target], 2)
+                save_file = os.path.join(os.path.dirname(opt.pretrained), '%04d_%02d.png' % (iteration + 1, i + 1))
+                cv2.imwrite(save_file, cv2.cvtColor(img_as_ubyte(prediction), cv2.COLOR_RGB2BGR))
+
     logger.info('||==> val_PSNR={:.4f}\tcost_time={:.4f}'
                 .format(psnr_val.avg, time.time() - t0))
     return psnr_val.avg
@@ -42,6 +50,7 @@ def main():
     parser.add_argument('--test_batch_size', type=int, default=32, help='testing batch size, default=1')
     parser.add_argument('--data_set', type=str, default='sidd', help='the exact dataset we want to train on')
     parser.add_argument('--pretrained', type=str, help="Checkpoints directory,  (default:./checkpoints)")
+    parser.add_argument('--save_imgs', type=int, default=0, help='whether to save imgs')
 
     # global settings
     parser.add_argument('--gpus', default=1, type=str, help='id of gpus')
@@ -86,9 +95,9 @@ def main():
     logger.info("Load model from: {}".format(opt.pretrained))
     model, psnr_best = load_single_model(opt.pretrained, model, logger)
 
-    valid(val_data_loader, model, logger)
+    valid(opt, val_data_loader, model, logger)
     dst_folder = make_dir(os.path.join(os.path.dirname(opt.pretrained), opt.data_set))
-    gen_mat(ELD_UNet(), opt.pretrained, dst_folder, val_data_loader, opt.test_batch_size, opt.patch_size, logger)
+    # gen_mat(ELD_UNet(), opt.pretrained, dst_folder, val_data_loader, opt.test_batch_size, opt.patch_size, logger)
 
 
 if __name__ == '__main__':

@@ -141,6 +141,7 @@ def main():
     parser.add_argument('--patch_size', type=int, default=128, help='Size of cropped HR image')
     parser.add_argument('--test_batch_size', type=int, default=32, help='testing batch size, default=1')
     parser.add_argument('--test_patch_size', type=int, default=256, help='testing batch size, default=1')
+    parser.add_argument('--use_h5', type=int, )
 
     # training settings
     parser.add_argument('--nEpochs', type=int, default=150, help='number of epochs to train for')
