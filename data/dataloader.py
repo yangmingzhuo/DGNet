@@ -185,6 +185,7 @@ class LoadMultiH5Dataset(data.Dataset):
         self.path = src_path3
         self.h5f3 = h5py.File(self.path, 'r')
         self.keys3 = list(self.h5f3.keys())
+
         self.len1 = len(self.keys1)
         self.len2 = len(self.keys2)
         self.len3 = len(self.keys3)
