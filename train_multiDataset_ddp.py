@@ -48,12 +48,12 @@ def train(opt, epoch, model, ad_net, data_loader_1, data_loader_2, data_loader_3
         target_data = torch.cat([target1, target2, target3], dim=0)
 
         # forward
-        prediction, feature = model(input_data)
+        prediction = model(input_data)
         model_loss = criterion(prediction, target_data)
         if opt.lambda_ad == 0:
             total_loss = model_loss
         else:
-            discriminator_out_real = ad_net(feature)
+            discriminator_out_real = ad_net(prediction)
             ad_loss = get_ad_loss(discriminator_out_real, criterion_ce, label)
             total_loss = model_loss + opt.lambda_ad * ad_loss
             reduced_ad_loss = reduce_mean(ad_loss, opt.nProcs)
@@ -207,11 +207,17 @@ def main():
                                                                                          opt.batch_size,
                                                                                          opt.patch_size), logger,
                     opt.local_rank)
-    train_set_1 = LoadDataset(src_path=os.path.join(opt.data_dir, opt.data_set1, 'train'), patch_size=opt.patch_size,
+    # train_set_1 = LoadDataset(src_path=os.path.join(opt.data_dir, opt.data_set1, 'train'), patch_size=opt.patch_size,
+    #                           train=True)
+    # train_set_2 = LoadDataset(src_path=os.path.join(opt.data_dir, opt.data_set2, 'train'), patch_size=opt.patch_size,
+    #                           train=True)
+    # train_set_3 = LoadDataset(src_path=os.path.join(opt.data_dir, opt.data_set3, 'train'), patch_size=opt.patch_size,
+    #                           train=True)
+    train_set_1 = LoadH5Dataset(src_path=os.path.join(opt.data_dir, opt.data_set1, 'train.h5'), patch_size=opt.patch_size,
                               train=True)
-    train_set_2 = LoadDataset(src_path=os.path.join(opt.data_dir, opt.data_set2, 'train'), patch_size=opt.patch_size,
+    train_set_2 = LoadH5Dataset(src_path=os.path.join(opt.data_dir, opt.data_set2, 'train.h5'), patch_size=opt.patch_size,
                               train=True)
-    train_set_3 = LoadDataset(src_path=os.path.join(opt.data_dir, opt.data_set3, 'train'), patch_size=opt.patch_size,
+    train_set_3 = LoadH5Dataset(src_path=os.path.join(opt.data_dir, opt.data_set3, 'train.h5'), patch_size=opt.patch_size,
                               train=True)
     train_sampler_1 = DistributedSampler(train_set_1)
     train_data_loader_1 = DataLoaderX(dataset=train_set_1, batch_size=opt.batch_size,

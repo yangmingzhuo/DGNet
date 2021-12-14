@@ -22,21 +22,24 @@ def valid(opt, data_loader, model, logger):
     psnr_val = AverageMeter()
 
     for iteration, (noisy, target) in enumerate(data_loader):
-        noisy, target = noisy.cuda(), target.cuda()
+        noisy_num = torch.clamp(noisy, 0, 1).cpu().detach().permute(0, 2, 3, 1).squeeze(0)
         with torch.no_grad():
+            noisy, target = noisy.cuda(), target.cuda()
             prediction = model(noisy)
             prediction = torch.clamp(prediction, 0.0, 1.0)
 
+        prediction_num = torch.clamp(prediction, 0, 1).cpu().detach().permute(0, 2, 3, 1).squeeze(0)
         prediction = prediction.data.cpu().numpy().astype(np.float32)
+        target_num = torch.clamp(target, 0, 1).cpu().detach().permute(0, 2, 3, 1).squeeze(0)
         target = target.data.cpu().numpy().astype(np.float32)
+
         for i in range(prediction.shape[0]):
             psnr_val.update(compare_psnr(prediction[i, :, :, :], target[i, :, :, :], data_range=1.0), 1)
 
             if opt.save_imgs and iteration % 10 == 0:
-                noisy = noisy.data.cpu().numpy().astype(np.float32)
-                np.concatenate([noisy, prediction, target], 2)
+                img = np.concatenate([noisy_num[i, :, :, :], prediction_num[i, :, :, :], target_num[i, :, :, :]], 1)
                 save_file = os.path.join(os.path.dirname(opt.pretrained), '%04d_%02d.png' % (iteration + 1, i + 1))
-                cv2.imwrite(save_file, cv2.cvtColor(img_as_ubyte(prediction), cv2.COLOR_RGB2BGR))
+                cv2.imwrite(save_file, cv2.cvtColor(img_as_ubyte(img), cv2.COLOR_RGB2BGR))
 
     logger.info('||==> val_PSNR={:.4f}\tcost_time={:.4f}'
                 .format(psnr_val.avg, time.time() - t0))

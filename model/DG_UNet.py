@@ -143,7 +143,7 @@ class DG_UNet(nn.Module):
         conv10 = self.conv10_1(conv9)
         # out = nn.functional.pixel_shuffle(conv10, 2)
         out = conv10
-        return out, conv5
+        return out
 
     def _initialize_weights(self):
         for m in self.modules():

@@ -115,7 +115,7 @@ class LoadMultiDataset(data.Dataset):
         return len(self.img_paths)
 
 
-class LoadMultiH5Dataset(data.Dataset):
+class LoadH5Dataset(data.Dataset):
 
     def __init__(self, src_path, patch_size=128, train=True):
         self.path = src_path
