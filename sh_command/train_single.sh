@@ -9,7 +9,7 @@
 #renoir
 srun -p aipe --gres=gpu:2 --job-name='DGNet' -w SH-IDC2-172-20-21-216 \
 nohup python train_singleDataset.py \
-    --gpus=6,7 \
+    --gpus=2,3 \
     --data_set='renoir_v2' \
     --exp_id=0 &
 

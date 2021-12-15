@@ -22,7 +22,7 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 torchvision.set_image_backend('accimage')
 
 
-def train(opt, epoch, model, ad_net, data_loader, optimizer, scheduler, criterion, criterion_ce, logger, writer):
+def train(opt, epoch, model, data_loader, optimizer, scheduler, criterion, logger, writer):
     t0 = time.time()
     epoch_l1_loss = AverageMeter()
     epoch_total_loss = AverageMeter()
@@ -53,7 +53,7 @@ def train(opt, epoch, model, ad_net, data_loader, optimizer, scheduler, criterio
         if iteration % opt.print_freq == 0:
             ddp_logger_info(
                 'Train epoch: [{:d}/{:d}]\titeration: [{:d}/{:d}]\tlr={:.6f}\tl1_loss={:.4f}\ttotal_loss={:.4f}'
-                    .format(epoch, opt.nEpochs, iteration, len(data_loader), scheduler.get_lr()[0], epoch_l1_loss.avg),
+                    .format(epoch, opt.nEpochs, iteration, len(data_loader), scheduler.get_lr()[0], epoch_l1_loss.avg, epoch_total_loss.avg),
                 logger, opt.local_rank)
 
     ddp_writer_add_scalar('Train_L1_loss', epoch_l1_loss.avg, epoch, writer, opt.local_rank)
@@ -200,13 +200,12 @@ def main():
 
     ddp_logger_info("Push model to distribute data parallel!", logger, opt.local_rank)
     model.cuda(device=opt.local_rank)
-    ddp_logger_info('model={}'.format(model, logger, opt.local_rank))
+    ddp_logger_info('model={}'.format(model), logger, opt.local_rank)
     model = DDP(model, device_ids=[opt.local_rank])
 
     # loss
     ddp_logger_info('Use L1 loss as criterion', logger, opt.local_rank)
     criterion = nn.L1Loss().cuda(device=opt.local_rank)
-    criterion_ce = nn.CrossEntropyLoss().cuda(device=opt.local_rank)
 
     # optimizer and scheduler
     warmup_epochs = 3
@@ -246,7 +245,7 @@ def main():
         # training
         train(opt, epoch, model, train_data_loader, optimizer,
               scheduler,
-              criterion, criterion_ce, logger, writer)
+              criterion, logger, writer)
         # validation
         psnr = valid(opt, epoch, val_data_loader, model, criterion, logger, writer)
 
