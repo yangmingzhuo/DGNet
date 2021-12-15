@@ -26,7 +26,9 @@ polyu_train_list = ['Canon5D2_bag', 'Canon5D2_bicyc', 'Canon5D2_circu', 'Canon5D
 polyu_test_list = ['Canon5D2_chair', 'Canon5D2_recie', 'Canon80D_ball', 'Canon600_water', 'Nikon800_desk',
                    'Nikon800_plant', 'Nikon800_carbi', 'SonyA7II_book']
 
-renoir_list = ['Batch_001', 'Batch_004', 'Batch_009', 'Batch_013', 'Batch_019', 'Batch_020', 'Batch_026', 'Batch_035']
+renoir_list = ['Batch_005', 'Batch_009', 'Batch_010', 'Batch_015', 'Batch_019', 'Batch_021', 'Batch_025', 'Batch_031']
+
+
 
 
 def split(full_list, shuffle=False, ratio=0.2):

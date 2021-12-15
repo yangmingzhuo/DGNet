@@ -4,6 +4,8 @@ import random
 
 import numpy as np
 import glob
+import sys
+sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
 import cv2
 from scipy.io import loadmat
 from tqdm import tqdm
@@ -45,10 +47,11 @@ def prepare_renoir_data(src_path, dst_path, patch_size):
     if os.path.exists(dst_path_test):
         shutil.rmtree(dst_path_test)
     make_dir(dst_path_test)
-
+    path_real = '/home/SENSETIME/yangmingzhuo/Documents/ECCV/dst/'
     scene_paths = glob.glob(os.path.join(src_path, '*'))
     # prepare testing data
     print('RENOIR test data processing...')
+    total_num = 0
     for scene_num, scene_path in enumerate(tqdm(scene_paths), 0):
         scene_name = os.path.basename(scene_path)
         ref_path = glob.glob(os.path.join(scene_path, '*Reference.bmp'))
@@ -61,9 +64,11 @@ def prepare_renoir_data(src_path, dst_path, patch_size):
         gt = np.clip(gt, 0, 255).astype(np.uint8)
         # pos_list = get_pos_list(os.path.join(scene_path, 'patch_list.txt'))
         for img_num in range(len(noisy_paths)):
+            img2 = cv2.imread(os.path.join(path_real, str(total_num)+'.png'))
             noisy = np.array(cv2.imread(noisy_paths[img_num]))
             img = np.concatenate([noisy, gt], 2)
             [h, w, c] = img.shape
+
             patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, random_crop=False)
             random.shuffle(patch_list)
             for patch_num in range(len(patch_list[:32])):
@@ -73,6 +78,7 @@ def prepare_renoir_data(src_path, dst_path, patch_size):
                 cv2.imwrite(os.path.join(dst_path_test,
                                          '{}_img_{:03d}_patch_{:03d}.png'.format(
                                              scene_name, img_num + 1, patch_num + 1)), img)
+                total_num += 1
 
 
 def prepare_polyu_data(src_path, dst_path, patch_size):
@@ -175,9 +181,9 @@ def main():
     parser = argparse.ArgumentParser(description='PyTorch prepare test data')
     parser.add_argument('--patch_size', type=int, default=256, help='size of cropped image')
     parser.add_argument('--data_set', type=str, default='sidd', help='the dataset to crop')
-    parser.add_argument('--src_dir', type=str, default='/mnt/lustre/share/yangmingzhuo/split_dataset',
+    parser.add_argument('--src_dir', type=str, default='/home/SENSETIME/yangmingzhuo/Documents/ECCV/split_dataset',
                         help='the path of dataset dir')
-    parser.add_argument('--dst_dir', type=str, default='/mnt/lustre/share/yangmingzhuo/processed',
+    parser.add_argument('--dst_dir', type=str, default='/home/SENSETIME/yangmingzhuo/Documents/ECCV/processed',
                         help='the path of destination dir')
     parser.add_argument('--seed', type=int, default=0, help='random seed to use default=0')
     opt = parser.parse_args()

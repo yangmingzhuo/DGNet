@@ -152,7 +152,6 @@ def main():
 
     # optimizer and scheduler
     warmup_epochs = 3
-    # t_max = opt.nEpochs - warmup_epochs + opt.nEpochs / 2
     t_max = opt.nEpochs - warmup_epochs
     logger.info('Optimizer: Adam Warmup epochs: {}, Learning rate: {}, Scheduler: CosineAnnealingLR, T_max: {}'
                 .format(warmup_epochs, opt.lr, t_max))
@@ -182,7 +181,8 @@ def main():
         # training
         train(opt, epoch, model, train_data_loader, optimizer, scheduler, criterion, logger, writer)
         # validation
-        psnr = valid(opt, epoch, val_data_loader, model, criterion, logger, writer)
+        if epoch > 80 or epoch < 5 or epoch % 5 == 0:
+            psnr = valid(opt, epoch, val_data_loader, model, criterion, logger, writer)
 
         # save model
         save_model(os.path.join(checkpoint_folder, "model_latest.pth"), epoch, model, optimizer, psnr_best, logger)

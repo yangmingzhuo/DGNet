@@ -286,7 +286,8 @@ def main():
               scheduler, scheduler_ad,
               criterion, criterion_ce, logger, writer)
         # validation
-        psnr = valid(opt, epoch, val_data_loader, model, criterion, logger, writer)
+        if epoch > 80 or epoch < 5 or epoch % 5 == 0:
+            psnr = valid(opt, epoch, val_data_loader, model, criterion, logger, writer)
 
         # save model
         if opt.local_rank == 0:
