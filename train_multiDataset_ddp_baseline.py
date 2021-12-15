@@ -30,7 +30,6 @@ def train(opt, epoch, model, data_loader, optimizer, scheduler, criterion, logge
     for iteration, batch in enumerate(data_loader):
         # load data
         (noisy, target, label) = batch
-        # ddp_logger_info('{}\n'.format(label), logger, opt.local_rank)
         noisy, target = noisy.cuda(opt.local_rank, non_blocking=True), target.cuda(opt.local_rank,
                                                                                    non_blocking=True)
 
