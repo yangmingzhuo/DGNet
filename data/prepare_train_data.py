@@ -48,7 +48,7 @@ def prepare_sidd_data(src_path, dst_path, patch_size=256, rand_num_train=300):
 
 def prepare_renoir_data(src_path, dst_path, patch_size, rand_num_train=300):
     dst_path = make_dir(os.path.join(dst_path, 'renoir'))
-    dst_path_train = os.path.join(dst_path, 'train')
+    dst_path_train = os.path.join(dst_path, 'train_old')
     if os.path.exists(dst_path_train):
         shutil.rmtree(dst_path_train)
     make_dir(dst_path_train)

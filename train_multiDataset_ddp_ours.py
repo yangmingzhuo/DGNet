@@ -13,7 +13,7 @@ from tensorboardX import SummaryWriter
 from skimage.measure import compare_psnr
 from utils.util import *
 from model.DG_UNet import *
-from loss.loss import *
+from loss.ad_loss import *
 from data.dataloader import *
 from utils.gen_mat import *
 from utils.checkpoint import *
@@ -26,7 +26,7 @@ torchvision.set_image_backend('accimage')
 def train(opt, epoch, model, ad_net, data_loader, optimizer, optimizer_ad, scheduler,
           scheduler_ad, criterion, criterion_ce, logger, writer):
     t0 = time.time()
-    epoch_model_loss = AverageMeter()
+    epoch_l1_loss = AverageMeter()
     epoch_ad_loss = AverageMeter()
     epoch_total_loss = AverageMeter()
     model.train()
@@ -40,13 +40,13 @@ def train(opt, epoch, model, ad_net, data_loader, optimizer, optimizer_ad, sched
 
         # forward
         prediction = model(noisy)
-        model_loss = criterion(prediction, target)
+        l1_loss = criterion(prediction, target)
         if opt.lambda_ad == 0:
-            total_loss = model_loss
+            total_loss = l1_loss
         else:
             discriminator_out_real = ad_net(prediction)
             ad_loss = get_ad_loss(discriminator_out_real, criterion_ce)
-            total_loss = model_loss + opt.lambda_ad * ad_loss
+            total_loss = l1_loss + opt.lambda_ad * ad_loss
             reduced_ad_loss = reduce_mean(ad_loss, opt.nProcs)
             epoch_ad_loss.update(reduced_ad_loss.item(), noisy.size(0))
 
@@ -59,26 +59,26 @@ def train(opt, epoch, model, ad_net, data_loader, optimizer, optimizer_ad, sched
 
         # output
         dist.barrier()
-        reduced_model_loss = reduce_mean(model_loss, opt.nProcs)
+        reduced_l1_loss = reduce_mean(l1_loss, opt.nProcs)
         reduced_total_loss = reduce_mean(total_loss, opt.nProcs)
-        epoch_model_loss.update(reduced_model_loss.item(), noisy.size(0))
+        epoch_l1_loss.update(reduced_l1_loss.item(), noisy.size(0))
         epoch_total_loss.update(reduced_total_loss.item(), noisy.size(0))
         if iteration % opt.print_freq == 0:
             ddp_logger_info(
                 'Train epoch: [{:d}/{:d}]\titeration: [{:d}/{:d}]\tlr={:.6f}\tad_lr={:.6f}\tl1_loss={:.4f}\tad_loss={:.4f}\ttotal_loss={:.4f}'
                     .format(epoch, opt.nEpochs, iteration, len(data_loader), scheduler.get_lr()[0],
                             scheduler_ad.get_lr()[0],
-                            epoch_model_loss.avg, epoch_ad_loss.avg, epoch_total_loss.avg),
+                            epoch_l1_loss.avg, epoch_ad_loss.avg, epoch_total_loss.avg),
                 logger, opt.local_rank)
 
-    ddp_writer_add_scalar('Train_L1_loss', epoch_model_loss.avg, epoch, writer, opt.local_rank)
+    ddp_writer_add_scalar('Train_L1_loss', epoch_l1_loss.avg, epoch, writer, opt.local_rank)
     ddp_writer_add_scalar('Train_ad_loss', epoch_ad_loss.avg, epoch, writer, opt.local_rank)
     ddp_writer_add_scalar('Train_total_loss', epoch_total_loss.avg, epoch, writer, opt.local_rank)
     ddp_writer_add_scalar('Learning_rate', scheduler.get_lr()[0], epoch, writer, opt.local_rank)
     ddp_writer_add_scalar('Learning_rate_ad', scheduler_ad.get_lr()[0], epoch, writer, opt.local_rank)
     ddp_logger_info(
         '||==> Train epoch: [{:d}/{:d}]\tlr={:.6f}\tad_lr={:.6f}\tl1_loss={:.4f}\tad_loss={:.4f}\ttotal_loss={:.4f}\tcost_time={:.4f}'
-            .format(epoch, opt.nEpochs, scheduler.get_lr()[0], scheduler_ad.get_lr()[0], epoch_model_loss.avg,
+            .format(epoch, opt.nEpochs, scheduler.get_lr()[0], scheduler_ad.get_lr()[0], epoch_l1_loss.avg,
                     epoch_ad_loss.avg,
                     epoch_total_loss.avg, time.time() - t0),
         logger, opt.local_rank)
