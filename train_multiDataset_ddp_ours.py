@@ -18,7 +18,6 @@ from data.dataloader import *
 from utils.gen_mat import *
 from utils.checkpoint import *
 
-
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 torchvision.set_image_backend('accimage')
 
@@ -200,7 +199,7 @@ def main():
                                  train=True)
     train_sampler = DistributedSampler(train_set)
     train_data_loader = DataLoaderX(dataset=train_set, batch_size=opt.batch_size,
-                                   num_workers=opt.num_workers, pin_memory=True, sampler=train_sampler)
+                                    num_workers=opt.num_workers, pin_memory=True, sampler=train_sampler)
     ddp_logger_info(
         'Train dataset length: {} 1:{} 2:{} 3:{}'.format(len(train_data_loader), train_set.len1, train_set.len2,
                                                          train_set.len3), logger, opt.local_rank)
@@ -210,7 +209,7 @@ def main():
                           train=False)
     val_sampler = DistributedSampler(val_set)
     val_data_loader = DataLoaderX(dataset=val_set, batch_size=opt.test_batch_size, shuffle=False,
-                                 num_workers=opt.num_workers, pin_memory=True, sampler=val_sampler)
+                                  num_workers=opt.num_workers, pin_memory=True, sampler=val_sampler)
     ddp_logger_info('Validation dataset length: {}'.format(len(val_data_loader)), logger, opt.local_rank)
 
     # load network
@@ -252,7 +251,7 @@ def main():
     # resume
     if opt.pretrain_model != '':
         model, at_net, start_epoch, optimizer, optimizer_ad, psnr_best = load_model_2(opt.pretrain_model, model, ad_net,
-                                                                                    optimizer, optimizer_ad, logger)
+                                                                                      optimizer, optimizer_ad, logger)
         start_epoch += 1
         for i in range(1, start_epoch):
             scheduler.step()
@@ -292,11 +291,11 @@ def main():
                 psnr_best = psnr
                 epoch_best = epoch
                 save_model_2(os.path.join(checkpoint_folder, "model_best.pth"), epoch, model, ad_net, optimizer,
-                           optimizer_ad,
-                           psnr_best,
-                           logger)
+                             optimizer_ad,
+                             psnr_best,
+                             logger)
             save_model_2(os.path.join(checkpoint_folder, "model_latest.pth"), epoch, model, ad_net, optimizer,
-                       optimizer_ad, psnr_best, logger)
+                         optimizer_ad, psnr_best, logger)
 
         ddp_logger_info('||==> best_epoch = {}, best_psnr = {}'.format(epoch_best, psnr_best), logger, opt.local_rank)
 
