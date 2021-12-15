@@ -44,7 +44,7 @@ def prepare_sidd_data(src_path, dst_path, patch_size):
 
 def prepare_renoir_data(src_path, dst_path, patch_size):
     dst_path = make_dir(os.path.join(dst_path, 'renoir'))
-    dst_path_test = os.path.join(dst_path, 'test')
+    dst_path_test = os.path.join(dst_path, 'test_2')
     if os.path.exists(dst_path_test):
         shutil.rmtree(dst_path_test)
     make_dir(dst_path_test)
@@ -64,7 +64,7 @@ def prepare_renoir_data(src_path, dst_path, patch_size):
         ref = np.array(cv2.imread(ref_path[0])).astype(np.float32)
         full = np.array(cv2.imread(full_path[0])).astype(np.float32)
         gt = (ref + full) / 2
-        gt = np.clip(gt, 0, 255)
+        gt = np.clip(gt, 0, 255).astype(np.uint8)
         # pos_list = get_pos_list(os.path.join(scene_path, 'patch_list.txt'))
         for img_num in range(len(noisy_paths)):
 
