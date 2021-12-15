@@ -41,7 +41,7 @@ def valid(opt, data_loader, model, logger):
                 save_file = os.path.join(os.path.dirname(opt.pretrained), '%04d_%02d.png' % (iteration + 1, i + 1))
                 cv2.imwrite(save_file, cv2.cvtColor(img_as_ubyte(img), cv2.COLOR_RGB2BGR))
 
-    logger.info('||==> val_PSNR={:.4f}\tcost_time={:.4f}'
+    logger.info('||==> val_PSNR={:.6f}\tcost_time={:.4f}'
                 .format(psnr_val.avg, time.time() - t0))
     return psnr_val.avg
 

@@ -59,7 +59,7 @@ def train(opt, epoch, model, data_loader, optimizer, scheduler, criterion, logge
     ddp_writer_add_scalar('Train_total_loss', epoch_total_loss.avg, epoch, writer, opt.local_rank)
     ddp_writer_add_scalar('Learning_rate', scheduler.get_lr()[0], epoch, writer, opt.local_rank)
     ddp_logger_info(
-        '||==> Train epoch: [{:d}/{:d}]\tlr={:.6f}\tad_lr={:.6f}\tl1_loss={:.4f}\tad_loss={:.4f}\ttotal_loss={:.4f}\tcost_time={:.4f}'
+        '||==> Train epoch: [{:d}/{:d}]\tlr={:.6f}\tl1_loss={:.4f}\ttotal_loss={:.4f}\tcost_time={:.4f}'
             .format(epoch, opt.nEpochs, scheduler.get_lr()[0], epoch_l1_loss.avg,
                     epoch_total_loss.avg, time.time() - t0),
         logger, opt.local_rank)
