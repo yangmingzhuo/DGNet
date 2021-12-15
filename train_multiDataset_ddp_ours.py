@@ -41,14 +41,11 @@ def train(opt, epoch, model, ad_net, data_loader, optimizer, optimizer_ad, sched
         # forward
         prediction = model(noisy)
         l1_loss = criterion(prediction, target)
-        if opt.lambda_ad == 0:
-            total_loss = l1_loss
-        else:
-            discriminator_out_real = ad_net(prediction)
-            ad_loss = get_ad_loss(discriminator_out_real, criterion_ce)
-            total_loss = l1_loss + opt.lambda_ad * ad_loss
-            reduced_ad_loss = reduce_mean(ad_loss, opt.nProcs)
-            epoch_ad_loss.update(reduced_ad_loss.item(), noisy.size(0))
+        discriminator_out_real = ad_net(prediction)
+        ad_loss = get_ad_loss(discriminator_out_real, criterion_ce)
+        total_loss = l1_loss + opt.lambda_ad * ad_loss
+        reduced_ad_loss = reduce_mean(ad_loss, opt.nProcs)
+        epoch_ad_loss.update(reduced_ad_loss.item(), noisy.size(0))
 
         # backward
         optimizer.zero_grad()
