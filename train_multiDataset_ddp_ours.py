@@ -155,7 +155,6 @@ def main():
 
     # distributed
     parser.add_argument('--local_rank', default=0, type=int, help='node rank for distributed training')
-
     opt = parser.parse_args()
 
     # initialize
@@ -195,18 +194,15 @@ def main():
     train_set = LoadMultiDataset(src_path1=os.path.join(opt.data_dir, opt.data_set1, 'train'),
                                  src_path2=os.path.join(opt.data_dir, opt.data_set2, 'train'),
                                  src_path3=os.path.join(opt.data_dir, opt.data_set3, 'train'),
-                                 patch_size=opt.patch_size,
-                                 train=True)
+                                 patch_size=opt.patch_size, train=True)
     train_sampler = DistributedSampler(train_set)
     train_data_loader = DataLoaderX(dataset=train_set, batch_size=opt.batch_size,
                                     num_workers=opt.num_workers, pin_memory=True, sampler=train_sampler)
-    ddp_logger_info(
-        'Train dataset length: {} 1:{} 2:{} 3:{}'.format(len(train_data_loader), train_set.len1, train_set.len2,
-                                                         train_set.len3), logger, opt.local_rank)
+    ddp_logger_info('Train dataset length: {} 1:{} 2:{} 3:{}'.format(len(train_data_loader), train_set.len1, train_set.len2,
+                                                                     train_set.len3), logger, opt.local_rank)
 
     val_set = LoadDataset(src_path=os.path.join(opt.data_dir, opt.data_set_test, 'test'),
-                          patch_size=opt.test_patch_size,
-                          train=False)
+                          patch_size=opt.test_patch_size, train=False)
     val_sampler = DistributedSampler(val_set)
     val_data_loader = DataLoaderX(dataset=val_set, batch_size=opt.test_batch_size, shuffle=False,
                                   num_workers=opt.num_workers, pin_memory=True, sampler=val_sampler)
@@ -215,14 +211,14 @@ def main():
     # load network
     ddp_logger_info('Building model {}'.format(opt.model_type), logger, opt.local_rank)
     model = ELD_UNet()
-    ad_net = Discriminator(opt.nEpochs * len(train_data_loader))
-
-    ddp_logger_info("Push model to distribute data parallel!", logger, opt.local_rank)
     model.cuda(device=opt.local_rank)
-    ad_net.cuda(device=opt.local_rank)
-    ddp_logger_info('model={}\nad_net={}'.format(model, ad_net), logger, opt.local_rank)
     model = DDP(model, device_ids=[opt.local_rank])
+
+    ad_net = Discriminator(opt.nEpochs * len(train_data_loader))
+    ad_net.cuda(device=opt.local_rank)
     ad_net = DDP(ad_net, device_ids=[opt.local_rank])
+    ddp_logger_info("Push model to distribute data parallel!", logger, opt.local_rank)
+    ddp_logger_info('model={}\nad_net={}'.format(model, ad_net), logger, opt.local_rank)
 
     # loss
     ddp_logger_info('Use L1 loss as criterion', logger, opt.local_rank)
@@ -234,18 +230,19 @@ def main():
     t_max = opt.nEpochs - warmup_epochs
     ddp_logger_info('Optimizer: Adam Warmup epochs: {}, Learning rate: {}, Scheduler: CosineAnnealingLR, T_max: {}'
                     .format(warmup_epochs, opt.lr, t_max), logger, opt.local_rank)
-    optimizer = optim.Adam(model.parameters(), lr=opt.lr, weight_decay=opt.weight_decay)
-    optimizer_ad = optim.Adam(ad_net.parameters(), lr=opt.lr_ad, weight_decay=opt.weight_decay_ad)
-    ddp_logger_info('optimizer={}'.format(optimizer), logger, opt.local_rank)
-    ddp_logger_info('optimizer_ad={}'.format(optimizer_ad), logger, opt.local_rank)
 
+    optimizer = optim.Adam(model.parameters(), lr=opt.lr, weight_decay=opt.weight_decay)
+    ddp_logger_info('optimizer={}'.format(optimizer), logger, opt.local_rank)
     scheduler_cosine = optim.lr_scheduler.CosineAnnealingLR(optimizer, t_max, eta_min=opt.lr_min)
-    scheduler_cosine_ad = optim.lr_scheduler.CosineAnnealingLR(optimizer_ad, t_max, eta_min=opt.lr_min_ad)
     scheduler = GradualWarmupScheduler(optimizer, multiplier=1, total_epoch=warmup_epochs,
                                        after_scheduler=scheduler_cosine)
+    ddp_logger_info('scheduler={}'.format(scheduler), logger, opt.local_rank)
+
+    optimizer_ad = optim.Adam(ad_net.parameters(), lr=opt.lr_ad, weight_decay=opt.weight_decay_ad)
+    ddp_logger_info('optimizer_ad={}'.format(optimizer_ad), logger, opt.local_rank)
+    scheduler_cosine_ad = optim.lr_scheduler.CosineAnnealingLR(optimizer_ad, t_max, eta_min=opt.lr_min_ad)
     scheduler_ad = GradualWarmupScheduler(optimizer_ad, multiplier=1, total_epoch=warmup_epochs,
                                           after_scheduler=scheduler_cosine_ad)
-    ddp_logger_info('scheduler={}'.format(scheduler), logger, opt.local_rank)
     ddp_logger_info('scheduler_ad={}'.format(scheduler_ad), logger, opt.local_rank)
 
     # resume

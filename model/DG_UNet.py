@@ -29,20 +29,25 @@ class Discriminator(nn.Module):
         # self.batch_norm2d = nn.BatchNorm2d(512)
         self.relu1 = nn.ReLU(inplace=True)
         self.avg_pool = nn.AvgPool2d(kernel_size=4, stride=4)
+
         self.gen_feature = nn.Sequential(
             self.conv1,
             # self.batch_norm2d,
             self.relu1,
             self.avg_pool,
         )
+
         self.fc1 = nn.Linear(512, 512)
         self.fc1.weight.data.normal_(0, 0.01)
         self.fc1.bias.data.fill_(0.0)
+
         self.relu2 = nn.ReLU()
         self.drop_out = nn.Dropout(0.5)
+
         self.fc2 = nn.Linear(512, 3)
         self.fc2.weight.data.normal_(0, 0.3)
         self.fc2.bias.data.fill_(0.0)
+
         self.ad_net = nn.Sequential(
             self.fc1,
             self.relu2,
