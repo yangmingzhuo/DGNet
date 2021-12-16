@@ -5,6 +5,7 @@ import torch.cuda.random
 import torch.nn as nn
 import torch.optim as optim
 import torch.backends.cudnn as cudnn
+import torchvision
 from torch.utils.data import DataLoader
 from warmup_scheduler import GradualWarmupScheduler
 from tensorboardX import SummaryWriter
@@ -15,6 +16,9 @@ from data.dataloader import *
 from utils.util import *
 from utils.checkpoint import *
 from utils.gen_mat import *
+
+ImageFile.LOAD_TRUNCATED_IMAGES = True
+torchvision.set_image_backend('accimage')
 
 
 def train(opt, epoch, model, data_loader, optimizer, scheduler, criterion, logger, writer):
@@ -83,7 +87,7 @@ def main():
     parser.add_argument('--nEpochs', type=int, default=150, help='number of epochs to train for')
     parser.add_argument('--lr', type=float, default=2e-4, help='learning rate. default=0.0002')
     parser.add_argument('--lr_min', type=float, default=1e-5, help='minimum learning rate. default=0.000001')
-    parser.add_argument('--start_iter', type=int, default=1, help='starting epoch')
+    parser.add_argument('--start_epoch', type=int, default=1, help='starting epoch')
     parser.add_argument('--weight_decay', type=float, default=1e-8, help='weight_decay')
 
     # model settings
@@ -125,13 +129,13 @@ def main():
     train_set = LoadDataset(src_path=os.path.join(opt.data_dir, opt.data_set, 'train'), patch_size=opt.patch_size,
                             train=True)
     train_data_loader = DataLoaderX(dataset=train_set, batch_size=opt.batch_size, shuffle=True,
-                                   num_workers=opt.num_workers, pin_memory=True)
+                                    num_workers=opt.num_workers, pin_memory=True)
     logger.info('Train dataset length: {}'.format(len(train_data_loader)))
 
     val_set = LoadDataset(src_path=os.path.join(opt.data_dir, opt.data_set, 'test'), patch_size=opt.test_patch_size,
                           train=False)
     val_data_loader = DataLoaderX(dataset=val_set, batch_size=opt.test_batch_size, shuffle=False,
-                                 num_workers=opt.num_workers, pin_memory=True)
+                                  num_workers=opt.num_workers, pin_memory=True)
     logger.info('Validation dataset length: {}'.format(len(val_data_loader)))
 
     # load network
@@ -167,13 +171,13 @@ def main():
 
     # resume
     if opt.pretrain_model != '':
-        model, start_epoch, optimizer, psnr_best = load_model(opt.pretrain_model, model, optimizer, logger)
+        model, start_epoch, optimizer, psnr_best = load_model_dp(opt.pretrain_model, model, optimizer, logger)
         start_epoch += 1
         for i in range(1, start_epoch):
             scheduler.step()
         logger.info('Resume start epoch: {}, Learning rate:{:.6f}'.format(start_epoch, scheduler.get_lr()[0]))
     else:
-        start_epoch = opt.start_iter
+        start_epoch = opt.start_epoch
         logger.info('Start epoch: {}, Learning rate:{:.6f}'.format(start_epoch, scheduler.get_lr()[0]))
 
     # training
@@ -186,10 +190,11 @@ def main():
         # save model
         save_model(os.path.join(checkpoint_folder, "model_latest.pth"), epoch, model, optimizer, psnr_best, logger)
 
-        if psnr > psnr_best:
+        if psnr >= psnr_best:
             psnr_best = psnr
             epoch_best = epoch
             save_model(os.path.join(checkpoint_folder, "model_best.pth"), epoch, model, optimizer, psnr_best, logger)
+
         scheduler.step()
         logger.info('||==> best_epoch = {}, best_psnr = {}'.format(epoch_best, psnr_best))
 

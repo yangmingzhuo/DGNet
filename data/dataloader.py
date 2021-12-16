@@ -70,34 +70,29 @@ class LoadMultiDataset(data.Dataset):
         self.img_paths = []
 
         files1 = glob.glob(os.path.join(src_path1, '*.png'))
-        files1.sort()
+        # files1.sort()
         self.len1 = len(files1)
         for file_name in files1:
-            self.img_paths.append(file_name)
+            self.img_paths.append((file_name, 1))
 
         files2 = glob.glob(os.path.join(src_path2, '*.png'))
-        files2.sort()
+        # files2.sort()
         self.len2 = len(files2)
         for file_name in files2:
-            self.img_paths.append(file_name)
+            self.img_paths.append((file_name, 2))
 
         files3 = glob.glob(os.path.join(src_path3, '*.png'))
-        files3.sort()
+        # files3.sort()
         self.len3 = len(files3)
         for file_name in files3:
-            self.img_paths.append(file_name)
+            self.img_paths.append((file_name, 3))
 
         self.patch_size = patch_size
         self.train = train
 
     def __getitem__(self, index):
-        if index < self.len1:
-            label = 1
-        elif index < self.len1 + self.len2:
-            label = 2
-        else:
-            label = 3
-        img_array = np.array(Image.open(self.img_paths[index]))
+        img_path, label = self.img_paths[index]
+        img_array = np.array(Image.open(img_path))
         noisy, clean = np.split(img_array, 2, axis=1)
         patch_size = self.patch_size
 

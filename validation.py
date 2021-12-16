@@ -36,13 +36,12 @@ def valid(opt, data_loader, model, logger):
         for i in range(prediction.shape[0]):
             psnr_val.update(compare_psnr(prediction[i, :, :, :], target[i, :, :, :], data_range=1.0), 1)
 
-            if opt.save_imgs == 1 and iteration % 10 == 0:
+            if opt.save_imgs == 1:
                 img = np.concatenate([noisy_num[i, :, :, :], prediction_num[i, :, :, :], target_num[i, :, :, :]], 1)
                 save_file = os.path.join(os.path.dirname(opt.pretrained), '%04d_%02d.png' % (iteration + 1, i + 1))
                 cv2.imwrite(save_file, cv2.cvtColor(img_as_ubyte(img), cv2.COLOR_RGB2BGR))
 
-    logger.info('||==> val_PSNR={:.6f}\tcost_time={:.4f}'
-                .format(psnr_val.avg, time.time() - t0))
+    logger.info('||==> val_PSNR={:.6f}\tcost_time={:.4f}'.format(psnr_val.avg, time.time() - t0))
     return psnr_val.avg
 
 
@@ -97,10 +96,12 @@ def main():
     # load pretrained model
     logger.info("Load model from: {}".format(opt.pretrained))
     model, psnr_best = load_single_model(opt.pretrained, model, logger)
+    logger.info("pretrained_model psnr_best= {}".format(psnr_best))
 
     valid(opt, val_data_loader, model, logger)
+
     dst_folder = make_dir(os.path.join(os.path.dirname(opt.pretrained), opt.data_set))
-    # gen_mat(ELD_UNet(), opt.pretrained, dst_folder, val_data_loader, opt.test_batch_size, opt.patch_size, logger)
+    gen_mat(ELD_UNet(), opt.pretrained, dst_folder, val_data_loader, opt.test_batch_size, opt.patch_size, logger)
 
 
 if __name__ == '__main__':
