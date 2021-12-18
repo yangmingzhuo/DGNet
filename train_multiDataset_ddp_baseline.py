@@ -127,7 +127,7 @@ def main():
 
     # general settings
     parser.add_argument('--gpus', default='0,1,2,3', type=str, help='id of gpus')
-    parser.add_argument('--log_dir', default='./logs_v2/baseline', help='Location to save checkpoint models')
+    parser.add_argument('--log_dir', default='./logs_v2/ddp_baseline', help='Location to save checkpoint models')
     parser.add_argument('--seed', type=int, default=0, help='random seed to use. Default=0')
     parser.add_argument('--num_workers', type=int, default=8, help='number of workers')
     parser.add_argument('--print_freq', type=int, default=10, help='print freq')
