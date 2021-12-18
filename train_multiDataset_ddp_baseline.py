@@ -15,7 +15,7 @@ from skimage.measure import compare_psnr
 from model.ELD_UNet import ELD_UNet
 from utils.util import *
 from model.DG_UNet import *
-from loss.ad_loss import *
+from loss.loss import *
 from data.dataloader import *
 from utils.gen_mat import *
 from utils.checkpoint import *
@@ -108,8 +108,7 @@ def main():
     parser.add_argument('--data_set2', type=str, default='renoir', help='the exact dataset 2 we want to train on')
     parser.add_argument('--data_set3', type=str, default='nind', help='the exact dataset 3 we want to train on')
     parser.add_argument('--data_set_test', type=str, default='rid2021', help='the exact dataset 4 we want to test on')
-    parser.add_argument('--data_dir', type=str, default='/mnt/lustre/share/yangmingzhuo/processed',
-                        help='the dataset dir')
+    parser.add_argument('--data_dir', type=str, default='/mnt/lustre/share/yangmingzhuo/processed', help='the dataset dir')
     parser.add_argument('--batch_size', type=int, default=8, help='training batch size: 32')
     parser.add_argument('--patch_size', type=int, default=128, help='Size of cropped HR image')
     parser.add_argument('--test_batch_size', type=int, default=32, help='testing batch size, default=1')
@@ -128,7 +127,7 @@ def main():
 
     # general settings
     parser.add_argument('--gpus', default='0,1,2,3', type=str, help='id of gpus')
-    parser.add_argument('--log_dir', default='./logs_v2/', help='Location to save checkpoint models')
+    parser.add_argument('--log_dir', default='./logs_v2/baseline', help='Location to save checkpoint models')
     parser.add_argument('--seed', type=int, default=0, help='random seed to use. Default=0')
     parser.add_argument('--num_workers', type=int, default=8, help='number of workers')
     parser.add_argument('--print_freq', type=int, default=10, help='print freq')
