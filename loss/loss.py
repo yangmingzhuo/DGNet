@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-def get_ad_loss(discriminator_out, label ,criterion_ce):
+def get_ad_loss(discriminator_out, label, criterion_ce):
     loss = criterion_ce(discriminator_out, label)
     return loss
 

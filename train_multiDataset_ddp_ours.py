@@ -39,7 +39,7 @@ def train(opt, epoch, model, ad_net, data_loader, optimizer, optimizer_ad, sched
         (noisy, target, label) = batch
         # ddp_logger_info('{}\n'.format(label), logger, opt.local_rank)
         noisy, target = noisy.cuda(opt.local_rank, non_blocking=True), target.cuda(opt.local_rank, non_blocking=True)
-        label = label.cuda(opt.local_rank, non_blocking=True)
+        label = label.cuda(opt.local_rank)
         # model forward
         prediction = model(noisy)
         # discriminator forward

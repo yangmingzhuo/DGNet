@@ -57,15 +57,15 @@ class Discriminator(nn.Module):
 
         conv2 = F.leaky_relu(self.conv2_1(pool1), 0.2, inplace=True)
         conv2 = F.leaky_relu(self.conv2_2(conv2), 0.2, inplace=True)
-        pool2 = self.pool1(conv2)
+        pool2 = self.pool2(conv2)
 
         conv3 = F.leaky_relu(self.conv3_1(pool2), 0.2, inplace=True)
         conv3 = F.leaky_relu(self.conv3_2(conv3), 0.2, inplace=True)
-        pool3 = self.pool1(conv3)
+        pool3 = self.pool3(conv3)
 
         conv4 = F.leaky_relu(self.conv4_1(pool3), 0.2, inplace=True)
         conv4 = F.leaky_relu(self.conv4_2(conv4), 0.2, inplace=True)
-        pool4 = self.pool1(conv4)
+        pool4 = self.pool4(conv4)
 
         pool4 = self.avg_pool(pool4)
         pool4 = pool4.view(pool4.size(0), -1)
