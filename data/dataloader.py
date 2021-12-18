@@ -73,19 +73,19 @@ class LoadMultiDataset(data.Dataset):
         # files1.sort()
         self.len1 = len(files1)
         for file_name in files1:
-            self.img_paths.append((file_name, 1))
+            self.img_paths.append((file_name, 0))
 
         files2 = glob.glob(os.path.join(src_path2, '*.png'))
         # files2.sort()
         self.len2 = len(files2)
         for file_name in files2:
-            self.img_paths.append((file_name, 2))
+            self.img_paths.append((file_name, 1))
 
         files3 = glob.glob(os.path.join(src_path3, '*.png'))
         # files3.sort()
         self.len3 = len(files3)
         for file_name in files3:
-            self.img_paths.append((file_name, 3))
+            self.img_paths.append((file_name, 2))
 
         self.patch_size = patch_size
         self.train = train

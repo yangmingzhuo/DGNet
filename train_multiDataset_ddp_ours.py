@@ -24,7 +24,7 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 torchvision.set_image_backend('accimage')
 
 
-def train(opt, epoch, model, ad_net, data_loader, optimizer, optimizer_ad, scheduler, scheduler_ad, criterion, logger, writer):
+def train(opt, epoch, model, ad_net, data_loader, optimizer, optimizer_ad, scheduler, scheduler_ad, criterion, criterion_ce, criterion_kl, logger, writer):
     t0 = time.time()
     epoch_l1_loss = AverageMeter()
     epoch_denoise_ad_loss = AverageMeter()
@@ -39,7 +39,7 @@ def train(opt, epoch, model, ad_net, data_loader, optimizer, optimizer_ad, sched
         (noisy, target, label) = batch
         # ddp_logger_info('{}\n'.format(label), logger, opt.local_rank)
         noisy, target = noisy.cuda(opt.local_rank, non_blocking=True), target.cuda(opt.local_rank, non_blocking=True)
-
+        label = label.cuda(opt.local_rank, non_blocking=True)
         # model forward
         prediction = model(noisy)
         # discriminator forward
@@ -48,10 +48,10 @@ def train(opt, epoch, model, ad_net, data_loader, optimizer, optimizer_ad, sched
 
         # loss
         l1_loss = criterion(prediction, target)
-        denoise_ad_loss = get_ad_loss(denoise_ad_out, label)
-        target_ad_loss = get_ad_loss(target_ad_out, label)
-        kl_loss = get_kl_loss(denoise_ad_out, target_ad_out)
-        total_loss = l1_loss + opt.lambda_ad * (denoise_ad_loss + target_ad_loss) + opt.lambda_kl * kl_loss
+        denoise_ad_loss = get_ad_loss(denoise_ad_out, label, criterion_ce)
+        target_ad_loss = get_ad_loss(target_ad_out, label , criterion_ce)
+        kl_loss = get_kl_loss(denoise_ad_out, target_ad_out, criterion_kl)
+        total_loss = l1_loss #+ opt.lambda_ad * (denoise_ad_loss + target_ad_loss) + opt.lambda_kl * kl_loss
 
         # backward
         optimizer.zero_grad()
@@ -238,6 +238,8 @@ def main():
     # loss
     ddp_logger_info('Use L1 loss as criterion', logger, opt.local_rank)
     criterion = nn.L1Loss().cuda(device=opt.local_rank)
+    criterion_ce = nn.CrossEntropyLoss().cuda(device=opt.local_rank)
+    criterion_kl = nn.KLDivLoss(reduction='batchmean').cuda(device=opt.local_rank)
 
     # optimizer and scheduler
     warmup_epochs = 3
@@ -282,7 +284,7 @@ def main():
         scheduler_ad.step()
 
         # training
-        train(opt, epoch, model, ad_net, train_data_loader, optimizer, optimizer_ad, scheduler, scheduler_ad, criterion, logger, writer)
+        train(opt, epoch, model, ad_net, train_data_loader, optimizer, optimizer_ad, scheduler, scheduler_ad, criterion, criterion_ce, criterion_kl, logger, writer)
 
         # validation
         psnr = valid(opt, epoch, val_data_loader, model, criterion, logger, writer)
