@@ -90,15 +90,6 @@ class ELD_UNet(nn.Module):
         out = conv10
         return out
 
-    def _initialize_weights(self):
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                m.weight.data.normal_(0.0, 0.02)
-                if m.bias is not None:
-                    m.bias.data.normal_(0.0, 0.02)
-            if isinstance(m, nn.ConvTranspose2d):
-                m.weight.data.normal_(0.0, 0.02)
-
     def lrelu(self, x):
         outt = torch.max(0.2 * x, x)
         return outt

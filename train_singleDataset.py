@@ -76,8 +76,7 @@ def main():
     parser = argparse.ArgumentParser(description='PyTorch image denoising')
     # dataset settings
     parser.add_argument('--data_set', type=str, default='sidd', help='the exact dataset we want to train on')
-    parser.add_argument('--data_dir', type=str, default='/mnt/lustre/share/yangmingzhuo/processed',
-                        help='the dataset dir')
+    parser.add_argument('--data_dir', type=str, default='/mnt/lustre/share/yangmingzhuo/processed', help='the dataset dir')
     parser.add_argument('--batch_size', type=int, default=32, help='training batch size: 32')
     parser.add_argument('--patch_size', type=int, default=128, help='Size of cropped HR image')
     parser.add_argument('--test_batch_size', type=int, default=32, help='testing batch size, default=1')
@@ -96,7 +95,7 @@ def main():
 
     # general settings
     parser.add_argument('--gpus', default='1', type=str, help='id of gpus')
-    parser.add_argument('--log_dir', default='./logs_v2/', help='Location to save checkpoint models')
+    parser.add_argument('--log_dir', default='./logs_v2/toy', help='Location to save checkpoint models')
     parser.add_argument('--seed', type=int, default=0, help='random seed to use. Default=0')
     parser.add_argument('--num_workers', type=int, default=8, help='number of workers')
     parser.add_argument('--print_freq', type=int, default=10, help='print freq')
