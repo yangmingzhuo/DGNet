@@ -88,7 +88,7 @@ class ELD_UNet(nn.Module):
         conv10 = self.conv10_1(conv9)
         # out = nn.functional.pixel_shuffle(conv10, 2)
         out = conv10
-        return out, conv10
+        return out
 
     def lrelu(self, x):
         outt = torch.max(0.2 * x, x)
