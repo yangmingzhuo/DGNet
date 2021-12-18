@@ -4,8 +4,6 @@ import torch.nn.functional as F
 
 
 def get_ad_loss(discriminator_out, label ,criterion_ce):
-    # generate ad_label
-
     loss = criterion_ce(discriminator_out, label)
     return loss
 

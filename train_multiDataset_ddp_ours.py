@@ -24,7 +24,7 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 torchvision.set_image_backend('accimage')
 
 
-def train(opt, epoch, model, ad_net, data_loader, optimizer, optimizer_ad, scheduler, scheduler_ad, criterion, criterion_ce, criterion_kl, logger, writer):
+def train(opt, epoch, model, ad_net, data_loader, optimizer, optimizer_ad, scheduler, scheduler_ad, criterion, criterion_ce, criterion_kl, T, logger, writer):
     t0 = time.time()
     epoch_l1_loss = AverageMeter()
     epoch_denoise_ad_loss = AverageMeter()
@@ -49,9 +49,9 @@ def train(opt, epoch, model, ad_net, data_loader, optimizer, optimizer_ad, sched
         # loss
         l1_loss = criterion(prediction, target)
         denoise_ad_loss = get_ad_loss(denoise_ad_out, label, criterion_ce)
-        target_ad_loss = get_ad_loss(target_ad_out, label , criterion_ce)
-        kl_loss = get_kl_loss(denoise_ad_out, target_ad_out, criterion_kl)
-        total_loss = l1_loss #+ opt.lambda_ad * (denoise_ad_loss + target_ad_loss) + opt.lambda_kl * kl_loss
+        target_ad_loss = get_ad_loss(target_ad_out, label, criterion_ce)
+        kl_loss = get_kl_loss(denoise_ad_out, target_ad_out, criterion_kl, T)
+        total_loss = l1_loss + opt.lambda_ad * (denoise_ad_loss + target_ad_loss) + opt.lambda_kl * kl_loss
 
         # backward
         optimizer.zero_grad()
@@ -155,6 +155,7 @@ def main():
     parser.add_argument('--weight_decay_ad', type=float, default=5e-4, help='weight_decay')
     parser.add_argument('--lambda_ad', type=float, default=0.5, help='lambda_ad')
     parser.add_argument('--lambda_kl', type=float, default=0.5, help='lambda_kl')
+    parser.add_argument('--temperature', type=float, default=20.0, help='kl temperature')
 
     # model settings
     parser.add_argument('--model_type', type=str, default='ELU_UNet', help='the name of model')
@@ -188,10 +189,10 @@ def main():
     if opt.local_rank == 0:
         log_folder = os.path.join(opt.log_dir,
                                   "model_{}_gpu_{}_ds_{}_{}_{}_td_{}_ps_{}_bs_{}_ep_{}_lr_ad_{}_lr_min_ad_{}_lam_ad{}"
-                                  "_lam_kl{}_exp_id_{}"
+                                  "_lam_kl{}_T_{}_exp_id_{}"
                                   .format(opt.model_type, opt.gpus, opt.data_set1, opt.data_set2, opt.data_set3,
                                           opt.data_set_test, opt.patch_size, opt.batch_size, opt.nEpochs, opt.lr_ad,
-                                          opt.lr_min_ad, opt.lambda_ad, opt.lambda_kl, opt.exp_id))
+                                          opt.lr_min_ad, opt.lambda_ad, opt.lambda_kl, opt.temperature, opt.exp_id))
         output_process(log_folder)
         checkpoint_folder = make_dir(os.path.join(log_folder, 'checkpoint'))
         writer = SummaryWriter(log_folder)
@@ -284,7 +285,7 @@ def main():
         scheduler_ad.step()
 
         # training
-        train(opt, epoch, model, ad_net, train_data_loader, optimizer, optimizer_ad, scheduler, scheduler_ad, criterion, criterion_ce, criterion_kl, logger, writer)
+        train(opt, epoch, model, ad_net, train_data_loader, optimizer, optimizer_ad, scheduler, scheduler_ad, criterion, criterion_ce, criterion_kl, opt.temperature, logger, writer)
 
         # validation
         psnr = valid(opt, epoch, val_data_loader, model, criterion, logger, writer)
