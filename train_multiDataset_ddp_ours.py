@@ -51,7 +51,7 @@ def train(opt, epoch, model, ad_net, data_loader, optimizer, optimizer_ad, sched
         denoise_ad_loss = get_ad_loss(denoise_ad_out, label, criterion_ce)
         target_ad_loss = get_ad_loss(target_ad_out, label, criterion_ce)
         kl_loss = get_kl_loss(denoise_ad_out, target_ad_out, criterion_kl, T)
-        total_loss = l1_loss + opt.lambda_ad * target_ad_loss
+        total_loss = l1_loss + opt.lambda_ad * (denoise_ad_loss + target_ad_loss) + opt.lambda_kl * kl_loss
 
         # backward
         optimizer.zero_grad()
