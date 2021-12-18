@@ -9,8 +9,10 @@
 #renoir
 srun -p aipe --gres=gpu:2 --job-name='DGNet' -w SH-IDC2-172-20-21-216 \
 nohup python train_singleDataset.py \
-    --gpus=2,3 \
+    --gpus=0,1 \
     --data_set='renoir_v2' \
+    --log_dir='logs_v2' \
+    --pretrain_model='/mnt/lustre/yangmingzhuo/DGNet/logs_v2/model_ELU_UNet_gpu_2,3_ds_renoir_v2_ps_128_bs_32_ep_150_lr_0.0002_lr_min_1e-05_exp_id_0/checkpoint/model_latest.pth' \
     --exp_id=0 &
 
 #polyu

@@ -44,7 +44,7 @@ def prepare_sidd_data(src_path, dst_path, patch_size):
 
 def prepare_renoir_data(src_path, dst_path, patch_size):
     dst_path = make_dir(os.path.join(dst_path, 'renoir'))
-    dst_path_test = os.path.join(dst_path, 'test_2')
+    dst_path_test = os.path.join(dst_path, 'test_3')
     if os.path.exists(dst_path_test):
         shutil.rmtree(dst_path_test)
     make_dir(dst_path_test)
@@ -73,29 +73,28 @@ def prepare_renoir_data(src_path, dst_path, patch_size):
             [h, w, c] = img.shape
 
             patch_list = crop_patch(img, (h, w), (patch_size, patch_size), patch_size, random_crop=False)
-            flag = 1
             img_num_real = 0
-            while flag:
+            while 1:
                 max_psnr = 0
+                max_patch_num = 0
+                if img_num_real >= 32 or img_num_real >= len(patch_list):
+                    break
                 for patch_num in range(len(patch_list)):
-                    if img_num_real >= 32 or img_num_real >= len(patch_list):
-                        flag = 0
-                        break
                     img2 = cv2.imread(os.path.join(path_real, str(total_num) + '.png'))
-                    noisy_patch = patch_list[patch_num][:, :, 0:3].transpose((1, 0, 2))
                     clean_patch = patch_list[patch_num][:, :, 3:6].transpose((1, 0, 2))
                     psnr = compare_psnr(img2, clean_patch)
                     if psnr > max_psnr:
                         max_psnr = psnr
+                        max_patch_num = patch_num
                     print(psnr, max_psnr, patch_num, img_num_real, total_num)
-                    if psnr > 50:
-                        img = np.concatenate([noisy_patch, clean_patch], 1)
-                        cv2.imwrite(os.path.join(dst_path_test,
-                                                 '{}_{}_img_{:03d}_patch_{:03d}.png'.format(
-                                                     total_num, scene_name, img_num + 1, patch_num + 1)), img)
-                        total_num += 1
-                        img_num_real += 1
-                        break
+                noisy_patch = patch_list[max_patch_num][:, :, 0:3].transpose((1, 0, 2))
+                clean_patch = patch_list[max_patch_num][:, :, 3:6].transpose((1, 0, 2))
+                img = np.concatenate([noisy_patch, clean_patch], 1)
+                cv2.imwrite(os.path.join(dst_path_test,
+                                         '{}_{}_img_{:03d}_patch_{:03d}.png'.format(
+                                             total_num, scene_name, img_num + 1, max_patch_num + 1)), img)
+                img_num_real += 1
+                total_num += 1
 
 
 def prepare_polyu_data(src_path, dst_path, patch_size):
