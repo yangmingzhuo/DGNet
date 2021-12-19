@@ -24,7 +24,7 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 torchvision.set_image_backend('accimage')
 
 
-def train(opt, epoch, model, ad_net, grl_layer, data_loader, optimizer, optimizer_ad, scheduler, scheduler_ad, criterion, T, logger, writer):
+def train(opt, epoch, model, ad_net, data_loader, optimizer, optimizer_ad, scheduler, scheduler_ad, criterion, T, hook_outputs, logger, writer):
     t0 = time.time()
     epoch_l1_loss = AverageMeter()
     epoch_denoise_ad_loss = AverageMeter()
@@ -42,10 +42,16 @@ def train(opt, epoch, model, ad_net, grl_layer, data_loader, optimizer, optimize
         label = label.cuda(opt.local_rank, non_blocking=True)
         # model forward
         prediction = model(noisy)
+        with torch.no_grad():
+            model(target)
+
+        # hook feature layer
+        prediction_feature = hook_outputs[0]
+        target_feature = hook_outputs[1]
+
         # discriminator forward
-        prediction = grl_layer(prediction)
-        denoise_ad_out = ad_net(prediction)
-        target_ad_out = ad_net(target)
+        denoise_ad_out = ad_net(prediction_feature)
+        target_ad_out = ad_net(target_feature)
 
         # loss
         l1_loss = criterion(prediction, target)
@@ -60,6 +66,7 @@ def train(opt, epoch, model, ad_net, grl_layer, data_loader, optimizer, optimize
         total_loss.backward()
         optimizer.step()
         optimizer_ad.step()
+        hook_outputs.clear()
 
         # output loss
         dist.barrier()
@@ -231,13 +238,11 @@ def main():
     model.cuda(device=opt.local_rank)
     model = DDP(model, device_ids=[opt.local_rank])
 
-    ad_net = Discriminator()
+    ad_net = Discriminator_v2(max_iter=opt.nEpochs * len(train_data_loader))
     ad_net.cuda(device=opt.local_rank)
     ad_net = DDP(ad_net, device_ids=[opt.local_rank])
     ddp_logger_info("Push model to distribute data parallel!", logger, opt.local_rank)
     ddp_logger_info('model={}\nad_net={}'.format(model, ad_net), logger, opt.local_rank)
-
-    grl_layer = GRL(max_iter=opt.nEpochs * len(train_data_loader))
 
     # loss
     ddp_logger_info('Use L1 loss as criterion', logger, opt.local_rank)
@@ -279,6 +284,8 @@ def main():
                         .format(start_epoch, scheduler.get_lr()[0], scheduler_ad.get_lr()[0]), logger, opt.local_rank)
 
     # training
+    hook_outputs = []
+    register_hook(model, hook_forward)
     for epoch in range(start_epoch, opt.nEpochs + 1):
         train_sampler.set_epoch(epoch)
         val_sampler.set_epoch(epoch)
@@ -286,7 +293,7 @@ def main():
         scheduler_ad.step()
 
         # training
-        train(opt, epoch, model, ad_net, grl_layer, train_data_loader, optimizer, optimizer_ad, scheduler, scheduler_ad, criterion, opt.temperature, logger, writer)
+        train(opt, epoch, model, ad_net, train_data_loader, optimizer, optimizer_ad, scheduler, scheduler_ad, criterion, opt.temperature, hook_outputs, logger, writer)
 
         # validation
         psnr = valid(opt, epoch, val_data_loader, model, criterion, logger, writer)
