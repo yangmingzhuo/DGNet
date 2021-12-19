@@ -44,6 +44,8 @@ class ELD_UNet(nn.Module):
 
         self.conv10_1 = nn.Conv2d(32, out_channels, kernel_size=1, stride=1)
 
+        self.hook_outputs = []
+
     def forward(self, x):
         conv1 = self.lrelu(self.conv1_1(x))
         conv1 = self.lrelu(self.conv1_2(conv1))

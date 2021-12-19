@@ -50,7 +50,6 @@ def train(opt, epoch, model, ad_net, data_loader, optimizer, optimizer_ad, sched
             model(target)
 
         # hook feature layer
-        print(hook_outputs[0])
         prediction_feature, = hook_outputs[0]
         target_feature, = hook_outputs[1]
 
