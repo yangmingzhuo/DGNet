@@ -81,13 +81,9 @@ def dataset_sort(data_loader_1, data_loader_2, data_loader_3):
         return data_loader_2, data_loader_3, data_loader_1
 
 
-def hook_forward(model, input, output):
-    hook_outputs.append(input)
-
-
 def register_hook(model, func):
-    for name, layer in model.name_modules():
-        if name == 'upv6':
+    for name, layer in model.named_modules():
+        if name == 'module.upv6':
             layer.register_forward_hook(func)
 
 

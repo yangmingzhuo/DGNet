@@ -79,7 +79,7 @@ class Discriminator(nn.Module):
 class Discriminator_v2(nn.Module):
     def __init__(self, max_iter, in_channels=512, domain_num=3, start_channel=32):
         super(Discriminator_v2, self).__init__()
-        self.avg_pool1 = nn.AvgPool2d(kernel_size=8)
+        self.avg_pool1 = nn.AdaptiveAvgPool2d((1, 1))
 
         self.fc2 = nn.Linear(in_channels, start_channel*16)
         self.dropout2 = nn.Dropout(0.5)

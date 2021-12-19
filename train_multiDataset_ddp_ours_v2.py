@@ -23,8 +23,12 @@ from utils.checkpoint import *
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 torchvision.set_image_backend('accimage')
 
+hook_outputs = []
+def hook_forward(module, input, output):
+    hook_outputs.append(input)
 
-def train(opt, epoch, model, ad_net, data_loader, optimizer, optimizer_ad, scheduler, scheduler_ad, criterion, T, hook_outputs, logger, writer):
+
+def train(opt, epoch, model, ad_net, data_loader, optimizer, optimizer_ad, scheduler, scheduler_ad, criterion, T, logger, writer):
     t0 = time.time()
     epoch_l1_loss = AverageMeter()
     epoch_denoise_ad_loss = AverageMeter()
@@ -46,8 +50,9 @@ def train(opt, epoch, model, ad_net, data_loader, optimizer, optimizer_ad, sched
             model(target)
 
         # hook feature layer
-        prediction_feature = hook_outputs[0]
-        target_feature = hook_outputs[1]
+        print(hook_outputs[0])
+        prediction_feature, = hook_outputs[0]
+        target_feature, = hook_outputs[1]
 
         # discriminator forward
         denoise_ad_out = ad_net(prediction_feature)
@@ -284,7 +289,6 @@ def main():
                         .format(start_epoch, scheduler.get_lr()[0], scheduler_ad.get_lr()[0]), logger, opt.local_rank)
 
     # training
-    hook_outputs = []
     register_hook(model, hook_forward)
     for epoch in range(start_epoch, opt.nEpochs + 1):
         train_sampler.set_epoch(epoch)
@@ -293,7 +297,7 @@ def main():
         scheduler_ad.step()
 
         # training
-        train(opt, epoch, model, ad_net, train_data_loader, optimizer, optimizer_ad, scheduler, scheduler_ad, criterion, opt.temperature, hook_outputs, logger, writer)
+        train(opt, epoch, model, ad_net, train_data_loader, optimizer, optimizer_ad, scheduler, scheduler_ad, criterion, opt.temperature, logger, writer)
 
         # validation
         psnr = valid(opt, epoch, val_data_loader, model, criterion, logger, writer)
