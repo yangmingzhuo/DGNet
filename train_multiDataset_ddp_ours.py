@@ -1,3 +1,54 @@
+Skip
+to
+content
+Search or jump
+to…
+Pull
+requests
+Issues
+Marketplace
+Explore
+
+
+@yangmingzhuo
+
+
+yangmingzhuo
+/
+DGNet
+Private
+Code
+Issues
+Pull
+requests
+Actions
+Projects
+Security
+Insights
+Settings
+DGNet / train_multiDataset_ddp_ours.py /
+
+
+@yangmingzhuo
+
+
+yangmingzhuo
+update
+Latest
+commit
+7211
+ba8
+1
+hour
+ago
+History
+1
+contributor
+317
+lines(268
+sloc)  16.6
+KB
+
 import time
 import argparse
 
@@ -24,7 +75,8 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 torchvision.set_image_backend('accimage')
 
 
-def train(opt, epoch, model, ad_net, grl_layer, data_loader, optimizer, optimizer_ad, scheduler, scheduler_ad, criterion, criterion_ce, criterion_kl, T, logger, writer):
+def train(opt, epoch, model, ad_net, grl_layer, data_loader, optimizer, optimizer_ad, scheduler, scheduler_ad,
+          criterion, criterion_ce, criterion_kl, T, logger, writer):
     t0 = time.time()
     epoch_l1_loss = AverageMeter()
     epoch_denoise_ad_loss = AverageMeter()
@@ -49,9 +101,9 @@ def train(opt, epoch, model, ad_net, grl_layer, data_loader, optimizer, optimize
 
         # loss
         l1_loss = criterion(prediction, target)
-        denoise_ad_loss = get_ad_loss(denoise_ad_out, label, criterion_ce)
-        target_ad_loss = get_ad_loss(target_ad_out, label, criterion_ce)
-        kl_loss = get_kl_loss(denoise_ad_out, target_ad_out, criterion_kl, T)
+        denoise_ad_loss = get_ad_loss(denoise_ad_out, label)
+        target_ad_loss = get_ad_loss(target_ad_out, label)
+        kl_loss = get_kl_loss(denoise_ad_out, target_ad_out, T)
         total_loss = l1_loss + opt.lambda_ad * (denoise_ad_loss + target_ad_loss) + opt.lambda_kl * kl_loss
 
         # backward
@@ -80,7 +132,8 @@ def train(opt, epoch, model, ad_net, grl_layer, data_loader, optimizer, optimize
                             '\tdenoise_ad_loss={:.4f}\ttarget_ad_loss={:.4f}\tkl_loss={:.4f}\ttotal_loss={:.4f}'
                             .format(epoch, opt.nEpochs, iteration, len(data_loader), scheduler.get_lr()[0],
                                     scheduler_ad.get_lr()[0], epoch_l1_loss.avg, epoch_denoise_ad_loss.avg,
-                                    epoch_target_ad_loss.avg, epoch_kl_loss.avg, epoch_total_loss.avg), logger, opt.local_rank)
+                                    epoch_target_ad_loss.avg, epoch_kl_loss.avg, epoch_total_loss.avg), logger,
+                            opt.local_rank)
 
     ddp_writer_add_scalar('Train_L1_loss', epoch_l1_loss.avg, epoch, writer, opt.local_rank)
     ddp_writer_add_scalar('Train_denoise_ad_loss', epoch_denoise_ad_loss.avg, epoch, writer, opt.local_rank)
@@ -137,7 +190,8 @@ def main():
     parser.add_argument('--data_set2', type=str, default='renoir', help='the exact dataset 2 we want to train on')
     parser.add_argument('--data_set3', type=str, default='nind', help='the exact dataset 3 we want to train on')
     parser.add_argument('--data_set_test', type=str, default='rid2021', help='the exact dataset 4 we want to test on')
-    parser.add_argument('--data_dir', type=str, default='/mnt/lustre/share/yangmingzhuo/processed', help='the dataset dir')
+    parser.add_argument('--data_dir', type=str, default='/mnt/lustre/share/yangmingzhuo/processed',
+                        help='the dataset dir')
     parser.add_argument('--batch_size', type=int, default=8, help='training batch size: 32')
     parser.add_argument('--patch_size', type=int, default=128, help='Size of cropped HR image')
     parser.add_argument('--test_batch_size', type=int, default=32, help='testing batch size, default=1')
@@ -207,7 +261,8 @@ def main():
 
     # load dataset
     ddp_logger_info('Loading datasets {}, {}, {}, Batch Size: {}, Patch Size: {}'
-                    .format(opt.data_set1, opt.data_set2, opt.data_set3, opt.batch_size, opt.patch_size), logger, opt.local_rank)
+                    .format(opt.data_set1, opt.data_set2, opt.data_set3, opt.batch_size, opt.patch_size), logger,
+                    opt.local_rank)
     train_set = LoadMultiDataset(src_path1=os.path.join(opt.data_dir, opt.data_set1, 'train'),
                                  src_path2=os.path.join(opt.data_dir, opt.data_set2, 'train'),
                                  src_path3=os.path.join(opt.data_dir, opt.data_set3, 'train'),
@@ -215,8 +270,9 @@ def main():
     train_sampler = DistributedSampler(train_set)
     train_data_loader = DataLoaderX(dataset=train_set, batch_size=opt.batch_size,
                                     num_workers=opt.num_workers, pin_memory=True, sampler=train_sampler)
-    ddp_logger_info('Train dataset length: {} 1:{} 2:{} 3:{}'.format(len(train_data_loader), train_set.len1, train_set.len2,
-                                                                     train_set.len3), logger, opt.local_rank)
+    ddp_logger_info(
+        'Train dataset length: {} 1:{} 2:{} 3:{}'.format(len(train_data_loader), train_set.len1, train_set.len2,
+                                                         train_set.len3), logger, opt.local_rank)
 
     val_set = LoadDataset(src_path=os.path.join(opt.data_dir, opt.data_set_test, 'test'),
                           patch_size=opt.test_patch_size, train=False)
@@ -242,8 +298,6 @@ def main():
     # loss
     ddp_logger_info('Use L1 loss as criterion', logger, opt.local_rank)
     criterion = nn.L1Loss().cuda(device=opt.local_rank)
-    criterion_ce = nn.CrossEntropyLoss().cuda(device=opt.local_rank)
-    criterion_kl = nn.KLDivLoss(reduction='batchmean').cuda(device=opt.local_rank)
 
     # optimizer and scheduler
     warmup_epochs = 3
@@ -288,7 +342,8 @@ def main():
         scheduler_ad.step()
 
         # training
-        train(opt, epoch, model, ad_net, grl_layer, train_data_loader, optimizer, optimizer_ad, scheduler, scheduler_ad, criterion, criterion_ce, criterion_kl, opt.temperature, logger, writer)
+        train(opt, epoch, model, ad_net, grl_layer, train_data_loader, optimizer, optimizer_ad, scheduler, scheduler_ad,
+              criterion, opt.temperature, logger, writer)
 
         # validation
         psnr = valid(opt, epoch, val_data_loader, model, criterion, logger, writer)

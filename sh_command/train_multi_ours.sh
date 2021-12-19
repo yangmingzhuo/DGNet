@@ -9,8 +9,8 @@ nohup python -m torch.distributed.launch --nproc_per_node=4 --master_port=10314 
     --data_set3='rid2021_v2' \
     --data_set_test='sidd' \
     --batch_size=8 \
-    --lr_ad=0.01 \
-    --lr_min_ad=0.0001 \
+    --lr_ad=2e-4 \
+    --lr_min_ad=1e-5 \
     --lambda_ad=0.5 \
     --lambda_kl=0.0 \
     --temperature=20.0 \

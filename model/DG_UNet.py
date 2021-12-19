@@ -41,7 +41,7 @@ class Discriminator(nn.Module):
         self.conv4_2 = nn.Conv2d(start_channel*8, start_channel*8, kernel_size=3, stride=1, padding=1)
         self.pool4 = nn.MaxPool2d(kernel_size=2)
 
-        self.avg_pool = nn.AvgPool2d((1, 1))
+        self.avg_pool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc5 = nn.Linear(start_channel*8, start_channel*16)
         self.dropout5 = nn.Dropout(0.5)
         self.fc6 = nn.Linear(start_channel*16, start_channel*16)
@@ -71,6 +71,31 @@ class Discriminator(nn.Module):
         fc5 = self.dropout5(fc5)
 
         fc6 = F.leaky_relu(self.fc6(fc5), 0.2, inplace=True)
+        fc6 = self.dropout6(fc6)
+        adversarial_out = self.fc7(fc6)
+        return adversarial_out
+
+
+class Discriminator_v2(nn.Module):
+    def __init__(self, max_iter, in_channels=512, domain_num=3, start_channel=32):
+        super(Discriminator_v2, self).__init__()
+        self.avg_pool = nn.AvgPool2d(kernel_size=8)
+        self.fc1 = nn.Linear(in_channels, start_channel*16)
+        self.dropout5 = nn.Dropout(0.5)
+        self.grl_layer = GRL(max_iter)
+        self.fc2 = nn.Linear(start_channel*16, start_channel*16)
+        self.dropout6 = nn.Dropout(0.5)
+        self.fc3 = nn.Linear(start_channel*16, domain_num)
+
+    def forward(self, x):
+        pool1 = self.avg_pool(x)
+        pool1 = pool1.view(pool1.size(0), -1)
+        fc5 = F.leaky_relu(self.fc5(pool1), 0.2, inplace=True)
+        fc5 = self.dropout5(fc5)
+
+        grl = self.grl_layer(fc5)
+
+        fc6 = F.leaky_relu(self.fc6(grl), 0.2, inplace=True)
         fc6 = self.dropout6(fc6)
         adversarial_out = self.fc7(fc6)
         return adversarial_out
