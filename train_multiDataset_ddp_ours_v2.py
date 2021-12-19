@@ -23,7 +23,6 @@ from utils.checkpoint import *
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 torchvision.set_image_backend('accimage')
 
-hook_outputs = []
 def hook_forward(module, input, output):
     hook_outputs.append(input)
 
@@ -322,4 +321,5 @@ def main():
 
 
 if __name__ == '__main__':
+    hook_outputs = []
     main()

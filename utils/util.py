@@ -87,6 +87,10 @@ def register_hook(model, func):
             layer.register_forward_hook(func)
 
 
+def hook_forward(module, input, output):
+    hook_outputs.append(input)
+
+
 class AverageMeter(object):
     def __init__(self):
         self.val = 0
