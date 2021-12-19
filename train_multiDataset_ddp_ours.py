@@ -24,7 +24,7 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 torchvision.set_image_backend('accimage')
 
 
-def train(opt, epoch, model, ad_net, data_loader, optimizer, optimizer_ad, scheduler, scheduler_ad, criterion, criterion_ce, criterion_kl, T, logger, writer):
+def train(opt, epoch, model, ad_net, grl_layer, data_loader, optimizer, optimizer_ad, scheduler, scheduler_ad, criterion, criterion_ce, criterion_kl, T, logger, writer):
     t0 = time.time()
     epoch_l1_loss = AverageMeter()
     epoch_denoise_ad_loss = AverageMeter()
@@ -43,6 +43,7 @@ def train(opt, epoch, model, ad_net, data_loader, optimizer, optimizer_ad, sched
         # model forward
         prediction = model(noisy)
         # discriminator forward
+        prediction = grl_layer(prediction)
         denoise_ad_out = ad_net(prediction)
         target_ad_out = ad_net(target)
 
@@ -230,11 +231,13 @@ def main():
     model.cuda(device=opt.local_rank)
     model = DDP(model, device_ids=[opt.local_rank])
 
-    ad_net = Discriminator(max_iter=opt.nEpochs * len(train_data_loader))
+    ad_net = Discriminator()
     ad_net.cuda(device=opt.local_rank)
     ad_net = DDP(ad_net, device_ids=[opt.local_rank])
     ddp_logger_info("Push model to distribute data parallel!", logger, opt.local_rank)
     ddp_logger_info('model={}\nad_net={}'.format(model, ad_net), logger, opt.local_rank)
+
+    grl_layer = GRL(max_iter=opt.nEpochs * len(train_data_loader))
 
     # loss
     ddp_logger_info('Use L1 loss as criterion', logger, opt.local_rank)
@@ -285,7 +288,7 @@ def main():
         scheduler_ad.step()
 
         # training
-        train(opt, epoch, model, ad_net, train_data_loader, optimizer, optimizer_ad, scheduler, scheduler_ad, criterion, criterion_ce, criterion_kl, opt.temperature, logger, writer)
+        train(opt, epoch, model, ad_net, grl_layer, train_data_loader, optimizer, optimizer_ad, scheduler, scheduler_ad, criterion, criterion_ce, criterion_kl, opt.temperature, logger, writer)
 
         # validation
         psnr = valid(opt, epoch, val_data_loader, model, criterion, logger, writer)
