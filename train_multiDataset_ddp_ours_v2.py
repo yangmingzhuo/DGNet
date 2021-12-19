@@ -23,6 +23,7 @@ from utils.checkpoint import *
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 torchvision.set_image_backend('accimage')
 
+
 def hook_forward(module, input, output):
     hook_outputs.append(input)
 
@@ -49,8 +50,8 @@ def train(opt, epoch, model, ad_net, data_loader, optimizer, optimizer_ad, sched
             model(target)
 
         # hook feature layer
-        prediction_feature, = hook_outputs[0]
-        target_feature, = hook_outputs[1]
+        prediction_feature = hook_outputs[0][0]
+        target_feature = hook_outputs[1][0]
 
         # discriminator forward
         denoise_ad_out = ad_net(prediction_feature)
@@ -61,7 +62,8 @@ def train(opt, epoch, model, ad_net, data_loader, optimizer, optimizer_ad, sched
         denoise_ad_loss = get_ad_loss(denoise_ad_out, label)
         target_ad_loss = get_ad_loss(target_ad_out, label)
         kl_loss = get_kl_loss(denoise_ad_out, target_ad_out, T)
-        total_loss = l1_loss + opt.lambda_ad * denoise_ad_loss #+ target_ad_loss) + opt.lambda_kl * kl_loss
+        total_loss = l1_loss + opt.lambda_ad * denoise_ad_loss
+        # total_loss = l1_loss + opt.lambda_ad * (denoise_ad_loss + target_ad_loss) + opt.lambda_kl * kl_loss
 
         # backward
         optimizer.zero_grad()
@@ -288,7 +290,8 @@ def main():
                         .format(start_epoch, scheduler.get_lr()[0], scheduler_ad.get_lr()[0]), logger, opt.local_rank)
 
     # training
-    register_hook(model, hook_forward)
+    hook_layers = ['module.upv6']
+    register_hook(model, hook_layers, hook_forward)
     for epoch in range(start_epoch, opt.nEpochs + 1):
         train_sampler.set_epoch(epoch)
         val_sampler.set_epoch(epoch)
