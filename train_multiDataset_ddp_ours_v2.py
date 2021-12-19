@@ -121,6 +121,7 @@ def valid(opt, epoch, data_loader, model, criterion, logger, writer):
             prediction = torch.clamp(prediction, 0.0, 1.0)
 
         loss = criterion(prediction, target)
+        hook_outputs.clear()
         prediction = prediction.data.cpu().numpy().astype(np.float32)
         target = target.data.cpu().numpy().astype(np.float32)
         for i in range(prediction.shape[0]):
