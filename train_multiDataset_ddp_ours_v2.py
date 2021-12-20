@@ -127,17 +127,22 @@ def train(opt, epoch, model, ad_net, data_loader, optimizer, optimizer_ad, sched
         label = label.cuda(opt.local_rank, non_blocking=True)
         # model forward
         prediction = model(noisy)
+        with torch.no_grad():
+            model(target)
 
         # hook feature layer
         prediction_feature = hook_outputs[0][0]
+        target_feature = hook_outputs[1][0]
 
         # discriminator forward
         denoise_ad_out = ad_net(prediction_feature)
+        target_ad_out = ad_net(target_feature)
 
         # loss
         l1_loss = criterion(prediction, target)
         denoise_ad_loss = get_ad_loss(denoise_ad_out, label)
-        total_loss = l1_loss + opt.lambda_ad * denoise_ad_loss
+        target_ad_loss = get_ad_loss(target_ad_out, label)
+        total_loss = l1_loss + opt.lambda_ad * (denoise_ad_loss + target_ad_loss)
         # total_loss = l1_loss + opt.lambda_ad * (denoise_ad_loss + target_ad_loss) + opt.lambda_kl * kl_loss
 
         # backward
@@ -152,10 +157,12 @@ def train(opt, epoch, model, ad_net, data_loader, optimizer, optimizer_ad, sched
         dist.barrier()
         reduced_l1_loss = reduce_mean(l1_loss, opt.nProcs)
         reduced_denoise_ad_loss = reduce_mean(denoise_ad_loss, opt.nProcs)
+        reduced_target_ad_loss = reduce_mean(target_ad_loss, opt.nProcs)
         reduced_total_loss = reduce_mean(total_loss, opt.nProcs)
 
         epoch_l1_loss.update(reduced_l1_loss.item(), noisy.size(0))
         epoch_denoise_ad_loss.update(reduced_denoise_ad_loss.item(), noisy.size(0))
+        epoch_target_ad_loss.update(reduced_target_ad_loss.item(), noisy.size(0))
         epoch_total_loss.update(reduced_total_loss.item(), noisy.size(0))
 
         if iteration % opt.print_freq == 0:
