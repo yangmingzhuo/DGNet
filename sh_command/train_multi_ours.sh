@@ -14,4 +14,4 @@ nohup python -m torch.distributed.launch --nproc_per_node=4 --master_port=10316 
     --lambda_ad=0.01 \
     --lambda_kl=0.0 \
     --temperature=20.0 \
-    --exp_id=2 &
+    --exp_id='v3' &

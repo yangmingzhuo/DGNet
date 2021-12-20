@@ -17,8 +17,8 @@ class GRL(torch.autograd.Function):
         return input * 1.0
 
     def backward(self, gradOutput):
-        coeff = np.float(2.0 * (self.high - self.low) / (1.0 + np.exp(-self.alpha * self.iter_num / self.max_iter))
-                         - (self.high - self.low) + self.low)
+        coeff = 2.0 * (self.high - self.low) / (1.0 + np.exp(-self.alpha * self.iter_num / self.max_iter)) \
+                - (self.high - self.low) + self.low
         return -coeff * gradOutput
 
 
@@ -108,9 +108,8 @@ class Discriminator_v2(nn.Module):
 
 
 class Discriminator_v3(nn.Module):
-    def __init__(self, max_iter, in_channels=512, domain_num=3):
+    def __init__(self, in_channels=512, domain_num=3):
         super(Discriminator_v3, self).__init__()
-        self.grl_layer = GRL(max_iter)
 
         self.conv1_1 = nn.Conv2d(in_channels, in_channels, kernel_size=3, stride=1, padding=1)
         self.pool1 = nn.MaxPool2d(kernel_size=2)
@@ -127,13 +126,11 @@ class Discriminator_v3(nn.Module):
         self.fc5 = nn.Linear(in_channels, domain_num)
 
     def forward(self, x):
-        grl = self.grl_layer3(x)
-
-        conv1 = F.leaky_relu(self.conv1_1(grl), 0.2, inplace=True)
+        conv1 = F.leaky_relu(self.conv1_1(x), 0.2, inplace=True)
         pool1 = self.pool1(conv1)
         conv1 = F.leaky_relu(self.conv1_2(pool1), 0.2, inplace=True)
 
-        pool2 = self.avg_pool1(conv1)
+        pool2 = self.avg_pool2(conv1)
         pool2 = pool2.view(pool2.size(0), -1)
 
         fc3 = F.leaky_relu(self.fc3(pool2), 0.2, inplace=True)

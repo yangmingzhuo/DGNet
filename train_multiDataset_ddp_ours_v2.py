@@ -109,7 +109,7 @@ def hook_forward(module, input, output):
 #                             epoch_total_loss.avg, time.time() - t0), logger, opt.local_rank)
 
 
-def train(opt, epoch, model, ad_net, data_loader, optimizer, optimizer_ad, scheduler, scheduler_ad, criterion, T, logger, writer):
+def train(opt, epoch, model, ad_net, grl_layer, data_loader, optimizer, optimizer_ad, scheduler, scheduler_ad, criterion, T, logger, writer):
     t0 = time.time()
     epoch_l1_loss = AverageMeter()
     epoch_denoise_ad_loss = AverageMeter()
@@ -135,6 +135,7 @@ def train(opt, epoch, model, ad_net, data_loader, optimizer, optimizer_ad, sched
         target_feature = hook_outputs[1][0]
 
         # discriminator forward
+        prediction_feature = grl_layer(prediction_feature)
         denoise_ad_out = ad_net(prediction_feature)
         target_ad_out = ad_net(target_feature)
 
@@ -259,7 +260,7 @@ def main():
     parser.add_argument('--seed', type=int, default=0, help='random seed to use. Default=0')
     parser.add_argument('--num_workers', type=int, default=8, help='number of workers')
     parser.add_argument('--print_freq', type=int, default=10, help='print freq')
-    parser.add_argument('--exp_id', type=int, default=0, help='experiment')
+    parser.add_argument('--exp_id', type=str, default='', help='experiment')
 
     # distributed
     parser.add_argument('--local_rank', default=0, type=int, help='node rank for distributed training')
@@ -280,8 +281,8 @@ def main():
     # log setting
     if opt.local_rank == 0:
         log_folder = os.path.join(opt.log_dir,
-                                  "model_{}_gpu_{}_ds_{}_{}_{}_td_{}_ps_{}_bs_{}_ep_{}_lr_ad_{}_lr_min_ad_{}_lam_ad{}"
-                                  "_lam_kl{}_T_{}_exp_id_{}"
+                                  "model_{}_gpu_{}_ds_{}_{}_{}_td_{}_ps_{}_bs_{}_ep_{}_lr_ad_{}_lr_min_ad_{}_lam_ad_{}"
+                                  "_lam_kl_{}_T_{}_exp_id_{}"
                                   .format(opt.model_type, opt.gpus, opt.data_set1, opt.data_set2, opt.data_set3,
                                           opt.data_set_test, opt.patch_size, opt.batch_size, opt.nEpochs, opt.lr_ad,
                                           opt.lr_min_ad, opt.lambda_ad, opt.lambda_kl, opt.temperature, opt.exp_id))
@@ -322,9 +323,10 @@ def main():
     model.cuda(device=opt.local_rank)
     model = DDP(model, device_ids=[opt.local_rank])
 
-    ad_net = Discriminator_v3(max_iter=opt.nEpochs * len(train_data_loader))
+    ad_net = Discriminator_v3()
     ad_net.cuda(device=opt.local_rank)
     ad_net = DDP(ad_net, device_ids=[opt.local_rank])
+    grl_layer = GRL(max_iter=opt.nEpochs * len(train_data_loader))
     ddp_logger_info("Push model to distribute data parallel!", logger, opt.local_rank)
     ddp_logger_info('model={}\nad_net={}'.format(model, ad_net), logger, opt.local_rank)
 
@@ -377,7 +379,7 @@ def main():
         scheduler_ad.step()
 
         # training
-        train(opt, epoch, model, ad_net, train_data_loader, optimizer, optimizer_ad, scheduler, scheduler_ad, criterion, opt.temperature, logger, writer)
+        train(opt, epoch, model, ad_net, grl_layer, train_data_loader, optimizer, optimizer_ad, scheduler, scheduler_ad, criterion, opt.temperature, logger, writer)
 
         # validation
         psnr = valid(opt, epoch, val_data_loader, model, criterion, logger, writer)
