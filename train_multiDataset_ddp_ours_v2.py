@@ -322,7 +322,7 @@ def main():
     model.cuda(device=opt.local_rank)
     model = DDP(model, device_ids=[opt.local_rank])
 
-    ad_net = Discriminator_v2(max_iter=opt.nEpochs * len(train_data_loader))
+    ad_net = Discriminator_v3(max_iter=opt.nEpochs * len(train_data_loader))
     ad_net.cuda(device=opt.local_rank)
     ad_net = DDP(ad_net, device_ids=[opt.local_rank])
     ddp_logger_info("Push model to distribute data parallel!", logger, opt.local_rank)
