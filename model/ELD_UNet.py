@@ -51,15 +51,15 @@ class ELD_UNet(nn.Module):
 
         conv2 = self.lrelu(self.conv2_1(pool1))
         conv2 = self.lrelu(self.conv2_2(conv2))
-        pool2 = self.pool1(conv2)
+        pool2 = self.pool2(conv2)
 
         conv3 = self.lrelu(self.conv3_1(pool2))
         conv3 = self.lrelu(self.conv3_2(conv3))
-        pool3 = self.pool1(conv3)
+        pool3 = self.pool3(conv3)
 
         conv4 = self.lrelu(self.conv4_1(pool3))
         conv4 = self.lrelu(self.conv4_2(conv4))
-        pool4 = self.pool1(conv4)
+        pool4 = self.pool4(conv4)
 
         conv5 = self.lrelu(self.conv5_1(pool4))
         conv5 = self.lrelu(self.conv5_2(conv5))
