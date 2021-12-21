@@ -87,6 +87,14 @@ def register_hook(model, hook_layers, func):
             layer.register_forward_hook(func)
 
 
+def accuracy(scores, targets, k=1):
+    batch_size = targets.size(0)
+    _, ind = scores.topk(k, 1, True, True)
+    correct = ind.eq(targets.long().view(-1, 1).expand_as(ind))
+    correct_total = correct.view(-1).float().sum()  # 0D tensor
+    return correct_total.item() * (1.0 / batch_size)
+
+
 class AverageMeter(object):
     def __init__(self):
         self.val = 0
