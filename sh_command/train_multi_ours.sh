@@ -23,10 +23,11 @@ nohup python -m torch.distributed.launch --nproc_per_node=4 --master_port=10312 
     --data_set2='nind' \
     --data_set3='rid2021_v2' \
     --data_set_test='sidd' \
+    --pretrain_model='/mnt/lustre/yangmingzhuo/DGNet/logs_v2/ddp_ours/model_ELU_UNet_gpu_4,5,6,7_ds_renoir_v2_nind_rid2021_v2_td_sidd_ps_128_bs_8_ep_150_lr_ad_0.001_lr_min_ad_0.0001_lam_ad_0.01_lam_kl_0.0_T_20.0_exp_id_v1/checkpoint/model_latest.pth' \
     --batch_size=8 \
     --lr_ad=1e-3 \
     --lr_min_ad=1e-4 \
     --lambda_ad=0.01 \
     --lambda_kl=0.0 \
     --temperature=20.0 \
-    --exp_id='v1' &
+    --exp_id='v1_continue' &
