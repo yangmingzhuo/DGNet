@@ -43,16 +43,17 @@ def train(opt, epoch, model, ad_net, grl_layer, data_loader, optimizer, optimize
         # model forward
         prediction = model(noisy)
         # discriminator forward
-        prediction = grl_layer(prediction)
-        denoise_ad_out = ad_net(prediction)
+        prediction_grl = grl_layer(prediction)
+        denoise_ad_out = ad_net(prediction_grl)
         target_ad_out = ad_net(target)
 
         # loss
         l1_loss = criterion(prediction, target)
         denoise_ad_loss = get_ad_loss(denoise_ad_out, label)
         target_ad_loss = get_ad_loss(target_ad_out, label)
-        kl_loss = get_kl_loss(denoise_ad_out, target_ad_out, T)
-        total_loss = l1_loss + opt.lambda_ad * denoise_ad_loss #+ target_ad_loss) + opt.lambda_kl * kl_loss
+        # kl_loss = get_kl_loss(denoise_ad_out, target_ad_out, T)
+        total_loss = l1_loss + opt.lambda_ad * (denoise_ad_loss + target_ad_loss)
+        # total_loss = l1_loss + opt.lambda_ad * (denoise_ad_loss + target_ad_loss) + opt.lambda_kl * kl_loss
 
         # backward
         optimizer.zero_grad()
@@ -66,13 +67,13 @@ def train(opt, epoch, model, ad_net, grl_layer, data_loader, optimizer, optimize
         reduced_l1_loss = reduce_mean(l1_loss, opt.nProcs)
         reduced_denoise_ad_loss = reduce_mean(denoise_ad_loss, opt.nProcs)
         reduced_target_ad_loss = reduce_mean(target_ad_loss, opt.nProcs)
-        reduced_kl_loss = reduce_mean(kl_loss, opt.nProcs)
+        # reduced_kl_loss = reduce_mean(kl_loss, opt.nProcs)
         reduced_total_loss = reduce_mean(total_loss, opt.nProcs)
 
         epoch_l1_loss.update(reduced_l1_loss.item(), noisy.size(0))
         epoch_denoise_ad_loss.update(reduced_denoise_ad_loss.item(), noisy.size(0))
         epoch_target_ad_loss.update(reduced_target_ad_loss.item(), noisy.size(0))
-        epoch_kl_loss.update(reduced_kl_loss.item(), noisy.size(0))
+        # epoch_kl_loss.update(reduced_kl_loss.item(), noisy.size(0))
         epoch_total_loss.update(reduced_total_loss.item(), noisy.size(0))
 
         if iteration % opt.print_freq == 0:
@@ -168,7 +169,7 @@ def main():
     parser.add_argument('--seed', type=int, default=0, help='random seed to use. Default=0')
     parser.add_argument('--num_workers', type=int, default=8, help='number of workers')
     parser.add_argument('--print_freq', type=int, default=10, help='print freq')
-    parser.add_argument('--exp_id', type=int, default=0, help='experiment')
+    parser.add_argument('--exp_id', type=str, default='', help='experiment')
 
     # distributed
     parser.add_argument('--local_rank', default=0, type=int, help='node rank for distributed training')
@@ -189,8 +190,8 @@ def main():
     # log setting
     if opt.local_rank == 0:
         log_folder = os.path.join(opt.log_dir,
-                                  "model_{}_gpu_{}_ds_{}_{}_{}_td_{}_ps_{}_bs_{}_ep_{}_lr_ad_{}_lr_min_ad_{}_lam_ad{}"
-                                  "_lam_kl{}_T_{}_exp_id_{}"
+                                  "model_{}_gpu_{}_ds_{}_{}_{}_td_{}_ps_{}_bs_{}_ep_{}_lr_ad_{}_lr_min_ad_{}_lam_ad_{}"
+                                  "_lam_kl_{}_T_{}_exp_id_{}"
                                   .format(opt.model_type, opt.gpus, opt.data_set1, opt.data_set2, opt.data_set3,
                                           opt.data_set_test, opt.patch_size, opt.batch_size, opt.nEpochs, opt.lr_ad,
                                           opt.lr_min_ad, opt.lambda_ad, opt.lambda_kl, opt.temperature, opt.exp_id))

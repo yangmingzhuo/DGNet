@@ -135,9 +135,9 @@ def train(opt, epoch, model, ad_net, grl_layer, data_loader, optimizer, optimize
         target_feature = hook_outputs[1][0]
 
         # discriminator forward
-        prediction_feature = grl_layer(prediction_feature)
-        denoise_ad_out = ad_net(prediction_feature)
-        target_ad_out = ad_net(target_feature)
+        prediction_grl = grl_layer(prediction_feature)
+        denoise_ad_out = ad_net(prediction_grl)
+        target_ad_out = ad_net(target_feature.detach())
 
         # loss
         l1_loss = criterion(prediction, target)
