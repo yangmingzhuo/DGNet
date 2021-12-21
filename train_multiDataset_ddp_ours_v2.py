@@ -82,44 +82,44 @@ def train(opt, epoch, model, ad_net, grl_layer, data_loader, optimizer, optimize
         reduced_l1_loss = reduce_mean(l1_loss, opt.nProcs)
         reduced_denoise_ad_loss = reduce_mean(denoise_ad_loss, opt.nProcs)
         reduced_target_ad_loss = reduce_mean(target_ad_loss, opt.nProcs)
-        reduced_denoise_acc = reduce_mean(denoise_acc, opt.nProcs)
-        reduced_target_acc = reduce_mean(target_acc, opt.nProcs)
         # reduced_kl_loss = reduce_mean(kl_loss, opt.nProcs)
         reduced_total_loss = reduce_mean(total_loss, opt.nProcs)
+        reduced_denoise_acc = reduce_mean(denoise_acc, opt.nProcs)
+        reduced_target_acc = reduce_mean(target_acc, opt.nProcs)
 
         epoch_l1_loss.update(reduced_l1_loss.item(), noisy.size(0))
         epoch_denoise_ad_loss.update(reduced_denoise_ad_loss.item(), noisy.size(0))
         epoch_target_ad_loss.update(reduced_target_ad_loss.item(), noisy.size(0))
-        epoch_denoise_acc.update(reduced_denoise_acc.item(), noisy.size(0))
-        epoch_target_acc.update(reduced_target_acc.item(), noisy.size(0))
         # epoch_kl_loss.update(reduced_kl_loss.item(), noisy.size(0))
         epoch_total_loss.update(reduced_total_loss.item(), noisy.size(0))
+        epoch_denoise_acc.update(reduced_denoise_acc.item(), noisy.size(0))
+        epoch_target_acc.update(reduced_target_acc.item(), noisy.size(0))
 
         if iteration % opt.print_freq == 0:
             ddp_logger_info('Train epoch: [{:d}/{:d}]\titeration: [{:d}/{:d}]\tlr={:.6f}\tad_lr={:.6f}\tl1_loss={:.4f}'
-                            '\tdenoise_ad_loss={:.4f}\ttarget_ad_loss={:.4f}\tdenoise_acc={:.4f}\ttarget_acc={:.4f}'
-                            '\tkl_loss={:.4f}\ttotal_loss={:.4f}'
+                            '\tdenoise_ad_loss={:.4f}\ttarget_ad_loss={:.4f}\tkl_loss={:.4f}\ttotal_loss={:.4f}\t'
+                            'denoise_acc={:.4f}\ttarget_acc={:.4f}'
                             .format(epoch, opt.nEpochs, iteration, len(data_loader), scheduler.get_lr()[0],
                                     scheduler_ad.get_lr()[0], epoch_l1_loss.avg, epoch_denoise_ad_loss.avg,
-                                    epoch_target_ad_loss.avg, epoch_denoise_acc.avg, epoch_target_acc.avg,
-                                    epoch_kl_loss.avg, epoch_total_loss.avg), logger, opt.local_rank)
+                                    epoch_target_ad_loss.avg, epoch_kl_loss.avg, epoch_total_loss.avg,
+                                    epoch_denoise_acc.avg, epoch_target_acc.avg), logger, opt.local_rank)
 
     ddp_writer_add_scalar('Train_L1_loss', epoch_l1_loss.avg, epoch, writer, opt.local_rank)
     ddp_writer_add_scalar('Train_denoise_ad_loss', epoch_denoise_ad_loss.avg, epoch, writer, opt.local_rank)
     ddp_writer_add_scalar('Train_target_ad_loss', epoch_target_ad_loss.avg, epoch, writer, opt.local_rank)
-    ddp_writer_add_scalar('Train_denoise_acc', epoch_denoise_acc.avg, epoch, writer, opt.local_rank)
-    ddp_writer_add_scalar('Train_target_acc', epoch_target_acc.avg, epoch, writer, opt.local_rank)
     ddp_writer_add_scalar('Train_kl_loss', epoch_kl_loss.avg, epoch, writer, opt.local_rank)
     ddp_writer_add_scalar('Train_total_loss', epoch_total_loss.avg, epoch, writer, opt.local_rank)
     ddp_writer_add_scalar('Learning_rate', scheduler.get_lr()[0], epoch, writer, opt.local_rank)
     ddp_writer_add_scalar('Learning_rate_ad', scheduler_ad.get_lr()[0], epoch, writer, opt.local_rank)
+    ddp_writer_add_scalar('Train_denoise_acc', epoch_denoise_acc.avg, epoch, writer, opt.local_rank)
+    ddp_writer_add_scalar('Train_target_acc', epoch_target_acc.avg, epoch, writer, opt.local_rank)
 
     ddp_logger_info('||==> Train epoch: [{:d}/{:d}]\tlr={:.6f}\tad_lr={:.6f}\tl1_loss={:.4f}\tdenoise_ad_loss={:.4f}\t'
-                    'target_ad_loss={:.4f}\tdenoise_acc={:.4f}\ttarget_acc={:.4f}\tkl_loss={:.4f}\ttotal_loss={:.4f}\t'
-                    'cost_time={:.4f}'
+                    'target_ad_loss={:.4f}\tkl_loss={:.4f}\ttotal_loss={:.4f}\tcost_time={:.4f}\tdenoise_acc={:.4f}\t'
+                    'target_acc={:.4f}'
                     .format(epoch, opt.nEpochs, scheduler.get_lr()[0], scheduler_ad.get_lr()[0], epoch_l1_loss.avg,
-                            epoch_denoise_ad_loss.avg, epoch_target_ad_loss.avg, epoch_denoise_acc.avg,
-                            epoch_target_acc.avg, epoch_kl_loss.avg, epoch_total_loss.avg, time.time() - t0),
+                            epoch_denoise_ad_loss.avg, epoch_target_ad_loss.avg, epoch_kl_loss.avg,
+                            epoch_total_loss.avg, time.time() - t0, epoch_denoise_acc.avg, epoch_target_acc.avg),
                     logger, opt.local_rank)
 
 
