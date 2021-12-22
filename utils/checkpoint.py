@@ -40,6 +40,15 @@ def load_single_model(checkpoint_path, model, logger):
     return model, psnr_best
 
 
+def load_ad_net_model(checkpoint_path, ad_net, logger):
+    check_point_params = torch.load(checkpoint_path)
+    model_state = check_point_params["ad_net"]
+    psnr_best = check_point_params["acc_best"]
+    ad_net = load_state(ad_net, model_state)
+    logger.info("load pretrained model and optimizer: acc_best={}, model={}".format(psnr_best, ad_net))
+    return ad_net, psnr_best
+
+
 def save_model(save_path, epoch, model, optimizer, psnr_best, logger):
     check_point_params = {}
     if isinstance(model, nn.DataParallel) or isinstance(model, DDP):
@@ -53,6 +62,21 @@ def save_model(save_path, epoch, model, optimizer, psnr_best, logger):
 
     torch.save(check_point_params, save_path)
     logger.info('||==> Epoch={}, save model and optimizer, psnr_best={}'.format(epoch, psnr_best))
+
+
+def save_ad_net(save_path, epoch, ad_net, optimizer, acc_best, logger):
+    check_point_params = {}
+    if isinstance(ad_net, nn.DataParallel) or isinstance(ad_net, DDP):
+        check_point_params["ad_net"] = ad_net.module.state_dict()
+    else:
+        check_point_params["ad_net"] = ad_net.state_dict()
+
+    check_point_params["optimizer"] = optimizer.state_dict()
+    check_point_params['epoch'] = epoch
+    check_point_params["acc_best"] = acc_best
+
+    torch.save(check_point_params, save_path)
+    logger.info('||==> Epoch={}, save model and optimizer, acc_best={}'.format(epoch, acc_best))
 
 
 def save_model_ad_net(save_path, epoch, model, ad_net, optimizer, optimizer_ad, psnr_best, logger):
@@ -74,6 +98,19 @@ def save_model_ad_net(save_path, epoch, model, ad_net, optimizer, optimizer_ad, 
 
 
 def load_model_dp(checkpoint_path, model, optimizer, logger):
+    check_point_params = torch.load(checkpoint_path)
+    model_state = check_point_params["model"]
+    optimizer.load_state_dict(check_point_params["optimizer"])
+    start_epoch = check_point_params['epoch']
+    psnr_best = check_point_params["psnr_best"]
+
+    model = load_state(model, model_state)
+    logger.info("load pretrained model and optimizer: epoch={}, psnr_best={}, model={}, optimizer={}"
+                .format(start_epoch, psnr_best, model, optimizer))
+    return model, start_epoch, optimizer, psnr_best
+
+
+def load_ad_net_dp(checkpoint_path, model, optimizer, logger):
     check_point_params = torch.load(checkpoint_path)
     model_state = check_point_params["model"]
     optimizer.load_state_dict(check_point_params["optimizer"])

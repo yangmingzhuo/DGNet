@@ -124,6 +124,66 @@ class LoadMultiDataset(data.Dataset):
         return len(self.img_paths)
 
 
+class LoadMultiDataset_clean(data.Dataset):
+
+    def __init__(self, src_path1, src_path2, src_path3, patch_size=128, train=True):
+        self.img_paths = []
+
+        files1 = glob.glob(os.path.join(src_path1, '*.png'))
+        # files1.sort()
+        self.len1 = len(files1)
+        for file_name in files1:
+            self.img_paths.append((file_name, 0))
+
+        files2 = glob.glob(os.path.join(src_path2, '*.png'))
+        # files2.sort()
+        self.len2 = len(files2)
+        for file_name in files2:
+            self.img_paths.append((file_name, 1))
+
+        files3 = glob.glob(os.path.join(src_path3, '*.png'))
+        # files3.sort()
+        self.len3 = len(files3)
+        for file_name in files3:
+            self.img_paths.append((file_name, 2))
+
+        self.patch_size = patch_size
+        self.train = train
+
+    def __getitem__(self, index):
+        img_path, label = self.img_paths[index]
+        img_array = np.array(Image.open(img_path))
+        noisy, clean = np.split(img_array, 2, axis=1)
+        patch_size = self.patch_size
+
+        # noisy_img = tf.to_tensor(noisy)
+        clean_img = tf.to_tensor(clean)
+
+        if self.train:
+            # crop Patch
+            height, width = clean_img.shape[1], clean_img.shape[2]
+            rr = random.randint(0, height - patch_size)
+            cc = random.randint(0, width - patch_size)
+            # noisy_img = noisy_img[:, rr:rr + patch_size, cc:cc + patch_size]
+            clean_img = clean_img[:, rr:rr + patch_size, cc:cc + patch_size]
+            # data Augmentation
+            p = 0.5
+            if random.random() > p:
+                # noisy_img = torch.rot90(noisy_img, dims=(1, 2))
+                clean_img = torch.rot90(clean_img, dims=(1, 2))
+            if random.random() > p:
+                # noisy_img = noisy_img.flip(1)
+                clean_img = clean_img.flip(1)
+            if random.random() > p:
+                # noisy_img = noisy_img.flip(2)
+                clean_img = clean_img.flip(2)
+
+        return clean_img, label
+
+    def __len__(self):
+        return len(self.img_paths)
+
+
 class LoadH5Dataset(data.Dataset):
 
     def __init__(self, src_path, patch_size=128, train=True):

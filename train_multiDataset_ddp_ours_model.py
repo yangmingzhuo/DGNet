@@ -57,6 +57,7 @@ def train(opt, epoch, model, ad_net, grl_layer, data_loader, optimizer, optimize
         denoise_ad_loss = get_ad_loss(denoise_ad_out, label)
         target_ad_loss = get_ad_loss(target_ad_out, label)
         # kl_loss = get_kl_loss(denoise_ad_out, target_ad_out, T)
+        # total_loss = l1_loss + opt.lambda_ad * denoise_ad_loss
         total_loss = l1_loss + opt.lambda_ad * (denoise_ad_loss + target_ad_loss)
         # total_loss = l1_loss + opt.lambda_ad * (denoise_ad_loss + target_ad_loss) + opt.lambda_kl * kl_loss
 
@@ -295,6 +296,8 @@ def main():
                         .format(start_epoch, scheduler.get_lr()[0], scheduler_ad.get_lr()[0]), logger, opt.local_rank)
     else:
         start_epoch = opt.start_epoch
+        scheduler.step()
+        scheduler_ad.step()
         ddp_logger_info('Start epoch: {}, Learning rate:{:.6f}, ad Learning rate:{:.6f}'
                         .format(start_epoch, scheduler.get_lr()[0], scheduler_ad.get_lr()[0]), logger, opt.local_rank)
 
