@@ -84,8 +84,8 @@ def train(opt, epoch, model, ad_net, grl_layer, data_loader, optimizer, optimize
         reduced_target_ad_loss = reduce_mean(target_ad_loss, opt.nProcs)
         # reduced_kl_loss = reduce_mean(kl_loss, opt.nProcs)
         reduced_total_loss = reduce_mean(total_loss, opt.nProcs)
-        reduced_denoise_acc = reduce_mean(denoise_acc, opt.nProcs)
-        reduced_target_acc = reduce_mean(target_acc, opt.nProcs)
+        reduced_denoise_acc = reduce_mean(torch.Tensor([denoise_acc]).cuda(opt.local_rank, non_blocking=True), opt.nProcs)
+        reduced_target_acc = reduce_mean(torch.Tensor([target_acc]).cuda(opt.local_rank, non_blocking=True), opt.nProcs)
 
         epoch_l1_loss.update(reduced_l1_loss.item(), noisy.size(0))
         epoch_denoise_ad_loss.update(reduced_denoise_ad_loss.item(), noisy.size(0))

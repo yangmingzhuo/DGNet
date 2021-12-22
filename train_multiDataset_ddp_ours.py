@@ -74,8 +74,8 @@ def train(opt, epoch, model, ad_net, grl_layer, data_loader, optimizer, optimize
         reduced_target_ad_loss = reduce_mean(target_ad_loss, opt.nProcs)
         # reduced_kl_loss = reduce_mean(kl_loss, opt.nProcs)
         reduced_total_loss = reduce_mean(total_loss, opt.nProcs)
-        reduced_denoise_acc = reduce_mean(denoise_acc, opt.nProcs)
-        reduced_target_acc = reduce_mean(target_acc, opt.nProcs)
+        reduced_denoise_acc = reduce_mean(torch.Tensor([denoise_acc]).cuda(opt.local_rank, non_blocking=True), opt.nProcs)
+        reduced_target_acc = reduce_mean(torch.Tensor([target_acc]).cuda(opt.local_rank, non_blocking=True), opt.nProcs)
 
         epoch_l1_loss.update(reduced_l1_loss.item(), noisy.size(0))
         epoch_denoise_ad_loss.update(reduced_denoise_ad_loss.item(), noisy.size(0))
@@ -286,6 +286,7 @@ def main():
     if opt.pretrain_model != '':
         model, at_net, start_epoch, optimizer, optimizer_ad, psnr_best = \
             load_model_ad_net(opt.pretrain_model, model, ad_net, optimizer, optimizer_ad, logger, opt.local_rank)
+        grl_layer.iter_num = start_epoch * len(train_data_loader)
         start_epoch += 1
         for i in range(1, start_epoch):
             scheduler.step()
@@ -301,8 +302,6 @@ def main():
     for epoch in range(start_epoch, opt.nEpochs + 1):
         train_sampler.set_epoch(epoch)
         val_sampler.set_epoch(epoch)
-        scheduler.step()
-        scheduler_ad.step()
 
         # training
         train(opt, epoch, model, ad_net, grl_layer, train_data_loader, optimizer, optimizer_ad, scheduler, scheduler_ad,
@@ -320,7 +319,8 @@ def main():
                                   optimizer_ad, psnr_best, logger)
             save_model_ad_net(os.path.join(checkpoint_folder, "model_latest.pth"), epoch, model, ad_net, optimizer,
                               optimizer_ad, psnr_best, logger)
-
+        scheduler.step()
+        scheduler_ad.step()
         ddp_logger_info('||==> best_epoch = {}, best_psnr = {}'.format(epoch_best, psnr_best), logger, opt.local_rank)
 
     # generate evaluate_mat for SSIM validation

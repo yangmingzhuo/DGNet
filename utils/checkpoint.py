@@ -102,7 +102,7 @@ def load_model(checkpoint_path, model, optimizer, logger, local_rank):
 def load_model_ad_net(checkpoint_path, model, ad_net, optimizer, optimizer_ad, logger, local_rank):
     check_point_params = torch.load(checkpoint_path)
     model_state = check_point_params["model"]
-    ad_net_state = check_point_params["model"]
+    ad_net_state = check_point_params["ad_net"]
     optimizer.load_state_dict(check_point_params["optimizer"])
     optimizer_ad.load_state_dict(check_point_params["optimizer_ad"])
     start_epoch = check_point_params['epoch']
