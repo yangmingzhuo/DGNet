@@ -33,6 +33,7 @@ def train(opt, epoch, ad_net, data_loader, optimizer, scheduler, logger, writer)
         target, label = target.cuda(), label.cuda()
         target_ad_out = ad_net(target)
         target_acc = accuracy(target_ad_out, label)
+
         loss = get_ad_loss(target_ad_out, label)
 
         optimizer.zero_grad()
@@ -42,10 +43,10 @@ def train(opt, epoch, ad_net, data_loader, optimizer, scheduler, logger, writer)
         epoch_loss.update(loss.data, target.size(0))
         epoch_acc.update(target_acc, target.size(0))
         if iteration % opt.print_freq == 0:
-            logger.info('Train epoch: [{:d}/{:d}]\titeration: [{:d}/{:d}]\tlr={:.6f}\tl1_loss={:.4f}\tacc={:4f}'
-                        .format(epoch, opt.nEpochs, iteration, len(data_loader), scheduler.get_lr()[0], epoch_loss.avg, epoch_acc.avg))
+            logger.info('Train epoch: [{:d}/{:d}]\titeration: [{:d}/{:d}]\tlr={:.6f}\tloss={:.4f}\tacc={:4f}'
+                        .format(epoch, opt.nEpochs, iteration, len(data_loader), scheduler.get_lr()[0], epoch_loss.avg, target_acc))
 
-    writer.add_scalar('Train_L1_loss', epoch_loss.avg, epoch)
+    writer.add_scalar('Train_loss', epoch_loss.avg, epoch)
     writer.add_scalar('Learning_rate', scheduler.get_lr()[0], epoch)
     writer.add_scalar('Accuracy', epoch_acc.avg, epoch)
     logger.info('||==> Train epoch: [{:d}/{:d}]\tlr={:.6f}\tl1_loss={:.4f}\tacc={:4f}\tcost_time={:.4f}'
@@ -61,13 +62,13 @@ def main():
     parser.add_argument('--data_set3', type=str, default='rid2021_v2', help='the exact dataset we want to train on')
     parser.add_argument('--data_dir', type=str, default='/mnt/lustre/share/yangmingzhuo/processed',
                         help='the dataset dir')
-    parser.add_argument('--batch_size', type=int, default=512, help='training batch size: 32')
+    parser.add_argument('--batch_size', type=int, default=256, help='training batch size: 32')
     parser.add_argument('--patch_size', type=int, default=128, help='Size of cropped HR image')
 
     # training settings
     parser.add_argument('--nEpochs', type=int, default=100, help='number of epochs to train for')
-    parser.add_argument('--lr', type=float, default=1e-2, help='learning rate. default=0.0002')
-    parser.add_argument('--lr_min', type=float, default=1e-4, help='minimum learning rate. default=0.000001')
+    parser.add_argument('--lr', type=float, default=1e-1, help='learning rate. default=0.0002')
+    parser.add_argument('--lr_min', type=float, default=1e-3, help='minimum learning rate. default=0.000001')
     parser.add_argument('--start_epoch', type=int, default=1, help='starting epoch')
     parser.add_argument('--weight_decay', type=float, default=5e-4, help='weight_decay')
 
