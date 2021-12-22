@@ -122,7 +122,7 @@ class Discriminator_model_v1(nn.Module):
         fc6 = self.dropout6(fc6)
 
         fc7 = F.leaky_relu(self.fc7(fc6), 0.2, inplace=True)
-        fc7 = self.dropout8(fc7)
+        fc7 = self.dropout7(fc7)
 
         fc8 = self.fc8(fc7)
         return fc8
@@ -176,7 +176,7 @@ class Discriminator_model_v2(nn.Module):
         fc6 = self.dropout6(fc6)
 
         fc7 = F.leaky_relu(self.fc7(fc6), 0.2, inplace=True)
-        fc7 = self.dropout8(fc7)
+        fc7 = self.dropout7(fc7)
 
         fc8 = self.fc8(fc7)
         return fc8

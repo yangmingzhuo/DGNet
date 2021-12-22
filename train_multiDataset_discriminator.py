@@ -108,9 +108,9 @@ def main():
     logger.info('Loading datasets {} {} {}, Batch Size: {}, Patch Size: {}'.format(opt.data_set1, opt.data_set2,
                                                                                    opt.data_set3, opt.batch_size,
                                                                                    opt.patch_size))
-    train_set = LoadMultiDataset_clean(src_path1=os.path.join(opt.data_dir, opt.data_set, 'train'),
-                                       src_path2=os.path.join(opt.data_dir, opt.data_set, 'train'),
-                                       src_path3=os.path.join(opt.data_dir, opt.data_set, 'train'),
+    train_set = LoadMultiDataset_clean(src_path1=os.path.join(opt.data_dir, opt.data_set1, 'train'),
+                                       src_path2=os.path.join(opt.data_dir, opt.data_set2, 'train'),
+                                       src_path3=os.path.join(opt.data_dir, opt.data_set3, 'train'),
                                        patch_size=opt.patch_size,
                                        train=True)
     train_data_loader = DataLoaderX(dataset=train_set, batch_size=opt.batch_size, shuffle=True,
@@ -119,7 +119,7 @@ def main():
 
     # load network
     logger.info('Building model {}'.format(opt.model_type))
-    ad_net = Discriminator_model_v2()
+    ad_net = Discriminator_model_v1()
 
     if torch.cuda.device_count() > 1:
         ad_net = torch.nn.DataParallel(ad_net)
@@ -147,7 +147,7 @@ def main():
 
     # resume
     if opt.pretrain_model != '':
-        model, start_epoch, optimizer, acc_best = load_ad_net_dp(opt.pretrain_model, model, optimizer, logger)
+        ad_net, start_epoch, optimizer, acc_best = load_ad_net_dp(opt.pretrain_model, ad_net, optimizer, logger)
         start_epoch += 1
         for i in range(1, start_epoch):
             scheduler.step()
