@@ -239,5 +239,5 @@ class Discriminator_encoder_v2(nn.Module):
         return adversarial_out
 
 
-print(Discriminator_model_v1())
+# print(Discriminator_model_v1())
 # print(Discriminator_model_v2())
