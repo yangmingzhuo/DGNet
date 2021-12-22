@@ -46,7 +46,7 @@ def train(opt, epoch, model, ad_net, grl_layer, data_loader, optimizer, optimize
         # model forward
         prediction = model(noisy)
         # discriminator forward
-        prediction_grl = grl_layer(prediction.detach())
+        prediction_grl = grl_layer(prediction)
         denoise_ad_out = ad_net(prediction_grl)
         target_ad_out = ad_net(target)
         denoise_acc = accuracy(denoise_ad_out, label)

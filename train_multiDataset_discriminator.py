@@ -120,7 +120,7 @@ def main():
 
     # load network
     logger.info('Building model {}'.format(opt.model_type))
-    ad_net = Discriminator_model_v2()
+    ad_net = Discriminator_model_v1()
 
     if torch.cuda.device_count() > 1:
         ad_net = torch.nn.DataParallel(ad_net)
