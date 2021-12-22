@@ -76,7 +76,7 @@ def main():
     parser.add_argument('--pretrain_model', type=str, default='', help='pretrain model path')
 
     # general settings
-    parser.add_argument('--gpus', default='0,1', type=str, help='id of gpus')
+    parser.add_argument('--gpus', default='0', type=str, help='id of gpus')
     parser.add_argument('--log_dir', default='./logs_disc/', help='Location to save checkpoint models')
     parser.add_argument('--seed', type=int, default=0, help='random seed to use. Default=0')
     parser.add_argument('--num_workers', type=int, default=8, help='number of workers')
@@ -119,7 +119,7 @@ def main():
 
     # load network
     logger.info('Building model {}'.format(opt.model_type))
-    ad_net = Discriminator_model_v1()
+    ad_net = Discriminator_model_v2()
 
     if torch.cuda.device_count() > 1:
         ad_net = torch.nn.DataParallel(ad_net)
