@@ -46,10 +46,7 @@ def train(opt, epoch, model, ad_net, grl_layer, data_loader, optimizer, optimize
         # model forward
         prediction = model(noisy)
         # discriminator forward
-        if epoch > 10:
-            prediction_grl = grl_layer(prediction)
-        else:
-            prediction_grl = grl_layer(prediction.detach())
+        prediction_grl = grl_layer(prediction.detach())
         denoise_ad_out = ad_net(prediction_grl)
         target_ad_out = ad_net(target)
         denoise_acc = accuracy(denoise_ad_out, label)
