@@ -48,17 +48,17 @@ def train(opt, epoch, model, ad_net, grl_layer, data_loader, optimizer, optimize
         # discriminator forward
         prediction_grl = grl_layer(prediction)
         denoise_ad_out = ad_net(prediction_grl)
-        target_ad_out = ad_net(target)
+        # target_ad_out = ad_net(target)
         denoise_acc = accuracy(denoise_ad_out, label)
-        target_acc = accuracy(target_ad_out, label)
+        # target_acc = accuracy(target_ad_out, label)
 
         # loss
         l1_loss = criterion(prediction, target)
         denoise_ad_loss = get_ad_loss(denoise_ad_out, label)
-        target_ad_loss = get_ad_loss(target_ad_out, label)
+        # target_ad_loss = get_ad_loss(target_ad_out, label)
         # kl_loss = get_kl_loss(denoise_ad_out, target_ad_out, T)
-        # total_loss = l1_loss + opt.lambda_ad * denoise_ad_loss
-        total_loss = l1_loss + opt.lambda_ad * (denoise_ad_loss + target_ad_loss)
+        total_loss = l1_loss + opt.lambda_ad * denoise_ad_loss
+        # total_loss = l1_loss + opt.lambda_ad * (denoise_ad_loss + target_ad_loss)
         # total_loss = l1_loss + opt.lambda_ad * (denoise_ad_loss + target_ad_loss) + opt.lambda_kl * kl_loss
 
         # backward
@@ -72,19 +72,19 @@ def train(opt, epoch, model, ad_net, grl_layer, data_loader, optimizer, optimize
         dist.barrier()
         reduced_l1_loss = reduce_mean(l1_loss, opt.nProcs)
         reduced_denoise_ad_loss = reduce_mean(denoise_ad_loss, opt.nProcs)
-        reduced_target_ad_loss = reduce_mean(target_ad_loss, opt.nProcs)
+        # reduced_target_ad_loss = reduce_mean(target_ad_loss, opt.nProcs)
         # reduced_kl_loss = reduce_mean(kl_loss, opt.nProcs)
         reduced_total_loss = reduce_mean(total_loss, opt.nProcs)
         reduced_denoise_acc = reduce_mean(torch.Tensor([denoise_acc]).cuda(opt.local_rank, non_blocking=True), opt.nProcs)
-        reduced_target_acc = reduce_mean(torch.Tensor([target_acc]).cuda(opt.local_rank, non_blocking=True), opt.nProcs)
+        # reduced_target_acc = reduce_mean(torch.Tensor([target_acc]).cuda(opt.local_rank, non_blocking=True), opt.nProcs)
 
         epoch_l1_loss.update(reduced_l1_loss.item(), noisy.size(0))
         epoch_denoise_ad_loss.update(reduced_denoise_ad_loss.item(), noisy.size(0))
-        epoch_target_ad_loss.update(reduced_target_ad_loss.item(), noisy.size(0))
+        # epoch_target_ad_loss.update(reduced_target_ad_loss.item(), noisy.size(0))
         # epoch_kl_loss.update(reduced_kl_loss.item(), noisy.size(0))
         epoch_total_loss.update(reduced_total_loss.item(), noisy.size(0))
         epoch_denoise_acc.update(reduced_denoise_acc.item(), noisy.size(0))
-        epoch_target_acc.update(reduced_target_acc.item(), noisy.size(0))
+        # epoch_target_acc.update(reduced_target_acc.item(), noisy.size(0))
 
         if iteration % opt.print_freq == 0:
             ddp_logger_info('Train epoch: [{:d}/{:d}]\titeration: [{:d}/{:d}]\tlr={:.6f}\tad_lr={:.6f}\tl1_loss={:.4f}'
@@ -179,6 +179,7 @@ def main():
     # model settings
     parser.add_argument('--model_type', type=str, default='ELU_UNet', help='the name of model')
     parser.add_argument('--pretrain_model', type=str, default='', help='pretrain model path')
+    parser.add_argument('--pretrained_ad_net', type=str, default='', help='pretrain model path')
 
     # general settings
     parser.add_argument('--gpus', default='0,1,2,3', type=str, help='id of gpus')
@@ -251,7 +252,9 @@ def main():
     model.cuda(device=opt.local_rank)
     model = DDP(model, device_ids=[opt.local_rank])
 
-    ad_net = Discriminator()
+    ad_net = Discriminator_model_v2()
+    if opt.pretrained_ad_net != '':
+        ad_net, start_epoch, acc_best = load_ad_net(opt.pretrained_ad_net, ad_net, logger, opt.local_rank)
     ad_net.cuda(device=opt.local_rank)
     ad_net = DDP(ad_net, device_ids=[opt.local_rank])
     ddp_logger_info("Push model to distribute data parallel!", logger, opt.local_rank)
