@@ -54,8 +54,8 @@ def train(opt, epoch, model, ad_net, grl_layer, data_loader, optimizer, optimize
 
         # loss
         l1_loss = criterion(prediction, target)
-        denoise_ad_loss = get_ad_loss(patch_denoise_ad_out, label)
-        target_ad_loss = get_ad_loss(patch_target_ad_out, label)
+        denoise_ad_loss = get_patch_ad_loss(patch_denoise_ad_out, label, 64)
+        target_ad_loss = get_patch_ad_loss(patch_target_ad_out, label, 64)
         # kl_loss = get_kl_loss(denoise_ad_out, target_ad_out, T)
         # total_loss = l1_loss + opt.lambda_ad * denoise_ad_loss
         total_loss = l1_loss + opt.lambda_ad * (denoise_ad_loss + target_ad_loss)
@@ -251,7 +251,7 @@ def main():
     model.cuda(device=opt.local_rank)
     model = DDP(model, device_ids=[opt.local_rank])
 
-    ad_net = Discriminator_model_patch()
+    ad_net = Discriminator_model_patch_v2()
     ad_net.cuda(device=opt.local_rank)
     ad_net = DDP(ad_net, device_ids=[opt.local_rank])
     ddp_logger_info("Push model to distribute data parallel!", logger, opt.local_rank)

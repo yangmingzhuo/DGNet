@@ -56,10 +56,10 @@ def train(opt, epoch, model, ad_net, grl_layer, data_loader, optimizer, optimize
         l1_loss = criterion(prediction, target)
         denoise_ad_loss = get_ad_loss(denoise_ad_out, label)
         target_ad_loss = get_ad_loss(target_ad_out, label)
-        kl_loss = get_kl_loss(denoise_ad_out, target_ad_out, T)
+        #kl_loss = get_kl_loss(denoise_ad_out, target_ad_out, T)
         #total_loss = l1_loss + opt.lambda_ad * denoise_ad_loss
-        #total_loss = l1_loss + opt.lambda_ad * (denoise_ad_loss + target_ad_loss)
-        total_loss = l1_loss + opt.lambda_ad * (denoise_ad_loss + target_ad_loss) + opt.lambda_kl * kl_loss
+        total_loss = l1_loss + opt.lambda_ad * (denoise_ad_loss + target_ad_loss)
+        #total_loss = l1_loss + opt.lambda_ad * (denoise_ad_loss + target_ad_loss) + opt.lambda_kl * kl_loss
 
         # backward
         optimizer.zero_grad()
@@ -73,7 +73,7 @@ def train(opt, epoch, model, ad_net, grl_layer, data_loader, optimizer, optimize
         reduced_l1_loss = reduce_mean(l1_loss, opt.nProcs)
         reduced_denoise_ad_loss = reduce_mean(denoise_ad_loss, opt.nProcs)
         reduced_target_ad_loss = reduce_mean(target_ad_loss, opt.nProcs)
-        reduced_kl_loss = reduce_mean(kl_loss, opt.nProcs)
+        #reduced_kl_loss = reduce_mean(kl_loss, opt.nProcs)
         reduced_total_loss = reduce_mean(total_loss, opt.nProcs)
         reduced_denoise_acc = reduce_mean(torch.Tensor([denoise_acc]).cuda(opt.local_rank, non_blocking=True), opt.nProcs)
         reduced_target_acc = reduce_mean(torch.Tensor([target_acc]).cuda(opt.local_rank, non_blocking=True), opt.nProcs)
@@ -81,7 +81,7 @@ def train(opt, epoch, model, ad_net, grl_layer, data_loader, optimizer, optimize
         epoch_l1_loss.update(reduced_l1_loss.item(), noisy.size(0))
         epoch_denoise_ad_loss.update(reduced_denoise_ad_loss.item(), noisy.size(0))
         epoch_target_ad_loss.update(reduced_target_ad_loss.item(), noisy.size(0))
-        epoch_kl_loss.update(reduced_kl_loss.item(), noisy.size(0))
+        #epoch_kl_loss.update(reduced_kl_loss.item(), noisy.size(0))
         epoch_total_loss.update(reduced_total_loss.item(), noisy.size(0))
         epoch_denoise_acc.update(reduced_denoise_acc.item(), noisy.size(0))
         epoch_target_acc.update(reduced_target_acc.item(), noisy.size(0))
@@ -167,6 +167,7 @@ def main():
     parser.add_argument('--lr_min', type=float, default=1e-5, help='minimum learning rate. default=0.000001')
     parser.add_argument('--start_epoch', type=int, default=1, help='starting epoch')
     parser.add_argument('--weight_decay', type=float, default=1e-8, help='weight_decay')
+    parser.add_argument('--use_bn', type=int, default=1, help='whether to use bn')
 
     # DGNet
     parser.add_argument('--lr_ad', type=float, default=0.1, help='learning rate. default=0.0002')
@@ -251,7 +252,9 @@ def main():
     model.cuda(device=opt.local_rank)
     model = DDP(model, device_ids=[opt.local_rank])
 
-    ad_net = Discriminator_model_v2()
+    ad_net = Discriminator_model_v3()
+    if dist.is_available() and dist.is_initialized() and opt.use_bn:
+        ad_net = nn.SyncBatchNorm.convert_sync_batchnorm(ad_net)
     ad_net.cuda(device=opt.local_rank)
     ad_net = DDP(ad_net, device_ids=[opt.local_rank])
     ddp_logger_info("Push model to distribute data parallel!", logger, opt.local_rank)
