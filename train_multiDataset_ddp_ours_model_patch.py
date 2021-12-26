@@ -43,19 +43,21 @@ def train(opt, epoch, model, ad_net, grl_layer, data_loader, optimizer, optimize
         # ddp_logger_info('{}\n'.format(label), logger, opt.local_rank)
         noisy, target = noisy.cuda(opt.local_rank, non_blocking=True), target.cuda(opt.local_rank, non_blocking=True)
         label = label.cuda(opt.local_rank, non_blocking=True)
+        patch_label = torch.cat([label.view(-1, 1) for i in range(64)], 1)
+        patch_label = patch_label.view(patch_label.size(0)*patch_label.size(1))
         # model forward
         prediction = model(noisy)
         # discriminator forward
         prediction_grl = grl_layer(prediction)
         patch_denoise_ad_out = ad_net(prediction_grl)
         patch_target_ad_out = ad_net(target)
-        denoise_acc = accuracy(patch_denoise_ad_out, label)
-        target_acc = accuracy(patch_target_ad_out, label)
+        denoise_acc = accuracy(patch_denoise_ad_out, patch_label)
+        target_acc = accuracy(patch_target_ad_out, patch_label)
 
         # loss
         l1_loss = criterion(prediction, target)
-        denoise_ad_loss = get_patch_ad_loss(patch_denoise_ad_out, label, 64)
-        target_ad_loss = get_patch_ad_loss(patch_target_ad_out, label, 64)
+        denoise_ad_loss = get_patch_ad_loss(patch_denoise_ad_out, patch_label)
+        target_ad_loss = get_patch_ad_loss(patch_target_ad_out, patch_label)
         # kl_loss = get_kl_loss(denoise_ad_out, target_ad_out, T)
         # total_loss = l1_loss + opt.lambda_ad * denoise_ad_loss
         total_loss = l1_loss + opt.lambda_ad * (denoise_ad_loss + target_ad_loss)

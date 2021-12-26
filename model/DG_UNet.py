@@ -344,16 +344,6 @@ class Discriminator_model_patch_v2(nn.Module):
         self.patch_layer = norm(nn.Conv2d(start_channel*16, domain_num, kernel_size=3, stride=1, padding=1))
         # [3, 8, 8]
 
-        # [1024, 8, 8]
-        # self.avg_pool = nn.AdaptiveAvgPool2d((1, 1))
-        #
-        # [1024, 1, 1]
-        # self.fc6 = norm(nn.Linear(start_channel*16, start_channel*8))
-        # self.dropout6 = nn.Dropout(0.5)
-        # self.fc7 = norm(nn.Linear(start_channel*8, start_channel*8))
-        # self.dropout7 = nn.Dropout(0.5)
-        # self.fc8 = nn.Linear(start_channel*8, domain_num)
-
     def forward(self, x):
         conv1 = F.leaky_relu(self.conv1(x), 0.2, inplace=True)
 
@@ -370,22 +360,15 @@ class Discriminator_model_patch_v2(nn.Module):
         conv5_2 = F.leaky_relu(self.conv5_2(conv5_1), 0.2, inplace=True)
 
         patch_feature = self.patch_layer(conv5_2)
+
+        # [8, 3, 8, 8]
         patch_feature = patch_feature.view(patch_feature.size(0), patch_feature.size(1), patch_feature.size(2) * patch_feature.size(3))
         # [8, 3, 64]
         patch_out = patch_feature.permute(0, 2, 1)
         # [8, 64, 3]
-        patch_out = patch_out.view(patch_out.size(0) * patch_out.size(1), patch_out.size(2))
+        patch_out = patch_out.contiguous().view(patch_out.size(0) * patch_out.size(1), patch_out.size(2))
+        # [512, 3]
 
-        # avg_pool = self.avg_pool(conv5_2)
-        # avg_pool = avg_pool.view(avg_pool.size(0), -1)
-        #
-        # fc6 = F.leaky_relu(self.fc6(avg_pool), 0.2, inplace=True)
-        # fc6 = self.dropout6(fc6)
-        #
-        # fc7 = F.leaky_relu(self.fc7(fc6), 0.2, inplace=True)
-        # fc7 = self.dropout7(fc7)
-        #
-        # fc8 = self.fc8(fc7)
         return patch_out
 
 
