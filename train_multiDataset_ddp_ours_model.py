@@ -299,8 +299,8 @@ def main():
                         .format(start_epoch, scheduler.get_lr()[0], scheduler_ad.get_lr()[0]), logger, opt.local_rank)
     else:
         start_epoch = opt.start_epoch
-        scheduler.step()
-        scheduler_ad.step()
+        # scheduler.step()
+        # scheduler_ad.step()
         ddp_logger_info('Start epoch: {}, Learning rate:{:.6f}, ad Learning rate:{:.6f}'
                         .format(start_epoch, scheduler.get_lr()[0], scheduler_ad.get_lr()[0]), logger, opt.local_rank)
 

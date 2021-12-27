@@ -31,6 +31,11 @@ import torchvision.transforms.functional as tf
 # if list_random[0] > p:
 #     noisy_img = noisy_img.flip(2)
 # cv2.imwrite('/home/SENSETIME/yangmingzhuo/dst/{}{}{}.png'.format(list_random[0], list_random[1], list_random[2]), cv2.cvtColor(img_as_ubyte(noisy_img.data.cpu().permute(1, 2, 0).numpy().astype(np.float32)), cv2.COLOR_RGB2BGR))
+#
+# print(np.exp(1), np.exp(2))
+# print(torch.exp(torch.Tensor(1).fill_(1)), torch.exp(torch.Tensor(1).fill_(2)))
 
-print(np.exp(1), np.exp(2))
-print(torch.exp(torch.Tensor(1).fill_(1)), torch.exp(torch.Tensor(1).fill_(2)))
+from torchvision.models import resnet18
+
+model = resnet18()
+print(model)

@@ -253,7 +253,7 @@ def main():
     model.cuda(device=opt.local_rank)
     model = DDP(model, device_ids=[opt.local_rank])
 
-    ad_net = Discriminator_model_patch_v2()
+    ad_net = Discriminator_model_patch_v3()
     ad_net.cuda(device=opt.local_rank)
     ad_net = DDP(ad_net, device_ids=[opt.local_rank])
     ddp_logger_info("Push model to distribute data parallel!", logger, opt.local_rank)
@@ -298,8 +298,8 @@ def main():
                         .format(start_epoch, scheduler.get_lr()[0], scheduler_ad.get_lr()[0]), logger, opt.local_rank)
     else:
         start_epoch = opt.start_epoch
-        scheduler.step()
-        scheduler_ad.step()
+        # scheduler.step()
+        # scheduler_ad.step()
         ddp_logger_info('Start epoch: {}, Learning rate:{:.6f}, ad Learning rate:{:.6f}'
                         .format(start_epoch, scheduler.get_lr()[0], scheduler_ad.get_lr()[0]), logger, opt.local_rank)
 

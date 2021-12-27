@@ -144,7 +144,6 @@ def main():
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, t_max, eta_min=opt.lr_min)
 
     logger.info('scheduler={}'.format(scheduler))
-    scheduler.step()
 
     # resume
     if opt.pretrain_model != '':

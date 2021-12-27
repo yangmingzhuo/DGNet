@@ -235,7 +235,6 @@ def main():
     for epoch in range(start_epoch, opt.nEpochs + 1):
         train_sampler.set_epoch(epoch)
         val_sampler.set_epoch(epoch)
-        scheduler.step()
 
         # training
         train(opt, epoch, model, train_data_loader, optimizer, scheduler, criterion, logger, writer)
@@ -255,7 +254,7 @@ def main():
     # generate evaluate_mat for SSIM validation
     # gen_mat(ELD_UNet(), os.path.join(checkpoint_folder, "model_best.pth"), checkpoint_folder, val_data_loader,
     #        opt.test_batch_size, opt.test_patch_size, logger)
-
+        scheduler.step()
     if opt.local_rank == 0:
         writer.close()
 

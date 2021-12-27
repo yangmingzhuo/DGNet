@@ -187,58 +187,57 @@ class Discriminator_model_v3(nn.Module):
     def __init__(self, in_channels=3, domain_num=3, start_channel=64):
         super(Discriminator_model_v3, self).__init__()
         self.conv1 = nn.Conv2d(in_channels, start_channel, kernel_size=3, stride=1, padding=1)
+        self.bn1 = nn.BatchNorm2d(start_channel)
 
         self.conv2_1 = nn.Conv2d(start_channel, start_channel, kernel_size=3, stride=2, padding=1)
-        self.bn2_1 = nn.BatchNorm2d(start_channel, affine=True)
+        self.bn2_1 = nn.BatchNorm2d(start_channel)
         self.conv2_2 = nn.Conv2d(start_channel, start_channel*2, kernel_size=3, stride=1, padding=1)
-        self.bn2_2 = nn.BatchNorm2d(start_channel*2, affine=True)
+        self.bn2_2 = nn.BatchNorm2d(start_channel*2)
 
         self.conv3_1 = nn.Conv2d(start_channel*2, start_channel*2, kernel_size=3, stride=2, padding=1)
-        self.bn3_1 = nn.BatchNorm2d(start_channel*2, affine=True)
+        self.bn3_1 = nn.BatchNorm2d(start_channel*2)
         self.conv3_2 = nn.Conv2d(start_channel*2, start_channel*4, kernel_size=3, stride=1, padding=1)
-        self.bn3_2 = nn.BatchNorm2d(start_channel*4, affine=True)
+        self.bn3_2 = nn.BatchNorm2d(start_channel*4)
 
         self.conv4_1 = nn.Conv2d(start_channel*4, start_channel*4, kernel_size=3, stride=2, padding=1)
-        self.bn4_1 = nn.BatchNorm2d(start_channel * 8, affine=True)
+        self.bn4_1 = nn.BatchNorm2d(start_channel * 4)
         self.conv4_2 = nn.Conv2d(start_channel*4, start_channel*8, kernel_size=3, stride=1, padding=1)
-        self.bn4_2 = nn.BatchNorm2d(start_channel * 8, affine=True)
+        self.bn4_2 = nn.BatchNorm2d(start_channel * 8)
 
         self.conv5_1 = nn.Conv2d(start_channel*8, start_channel*8, kernel_size=3, stride=2, padding=1)
-        self.bn5_1 = nn.BatchNorm2d(start_channel * 8, affine=True)
+        self.bn5_1 = nn.BatchNorm2d(start_channel * 8)
         self.conv5_2 = nn.Conv2d(start_channel*8, start_channel*16, kernel_size=3, stride=1, padding=1)
-        self.bn5_2 = nn.BatchNorm2d(start_channel * 16, affine=True)
+        self.bn5_2 = nn.BatchNorm2d(start_channel * 16)
 
         self.avg_pool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc6 = nn.Linear(start_channel*16, start_channel*8)
-        self.bn6 = nn.BatchNorm2d(start_channel * 16, affine=True)
         self.dropout6 = nn.Dropout(0.5)
         self.fc7 = nn.Linear(start_channel*8, start_channel*8)
-        self.bn7 = nn.BatchNorm2d(start_channel * 16, affine=True)
         self.dropout7 = nn.Dropout(0.5)
         self.fc8 = nn.Linear(start_channel*8, domain_num)
 
     def forward(self, x):
-        conv1 = F.leaky_relu(self.conv1(x), 0.2, inplace=True)
+        conv1 = F.leaky_relu(self.bn1(self.conv1(x)), 0.2, inplace=True)
 
-        conv2_1 = F.leaky_relu(self.bn2_1(self.conv2_1(conv1), 0.2, inplace=True))
-        conv2_2 = F.leaky_relu(self.bn2_2(self.conv2_2(conv2_1), 0.2, inplace=True))
+        conv2_1 = F.leaky_relu(self.bn2_1(self.conv2_1(conv1)), 0.2, inplace=True)
+        conv2_2 = F.leaky_relu(self.bn2_2(self.conv2_2(conv2_1)), 0.2, inplace=True)
 
-        conv3_1 = F.leaky_relu(self.bn3_1(self.conv3_1(conv2_2), 0.2, inplace=True))
-        conv3_2 = F.leaky_relu(self.bn3_2(self.conv3_2(conv3_1), 0.2, inplace=True))
+        conv3_1 = F.leaky_relu(self.bn3_1(self.conv3_1(conv2_2)), 0.2, inplace=True)
+        conv3_2 = F.leaky_relu(self.bn3_2(self.conv3_2(conv3_1)), 0.2, inplace=True)
 
-        conv4_1 = F.leaky_relu(self.bn4_1(self.conv4_1(conv3_2), 0.2, inplace=True))
-        conv4_2 = F.leaky_relu(self.bn4_2(self.conv4_2(conv4_1), 0.2, inplace=True))
+        conv4_1 = F.leaky_relu(self.bn4_1(self.conv4_1(conv3_2)), 0.2, inplace=True)
+        conv4_2 = F.leaky_relu(self.bn4_2(self.conv4_2(conv4_1)), 0.2, inplace=True)
 
-        conv5_1 = F.leaky_relu(self.bn5_1(self.conv5_1(conv4_2), 0.2, inplace=True))
-        conv5_2 = F.leaky_relu(self.bn5_2(self.conv5_2(conv5_1), 0.2, inplace=True))
+        conv5_1 = F.leaky_relu(self.bn5_1(self.conv5_1(conv4_2)), 0.2, inplace=True)
+        conv5_2 = F.leaky_relu(self.bn5_2(self.conv5_2(conv5_1)), 0.2, inplace=True)
 
         avg_pool = self.avg_pool(conv5_2)
         avg_pool = avg_pool.view(avg_pool.size(0), -1)
 
-        fc6 = F.leaky_relu(self.bn6(self.fc6(avg_pool), 0.2, inplace=True))
+        fc6 = F.leaky_relu(self.fc6(avg_pool), 0.2, inplace=True)
         fc6 = self.dropout6(fc6)
 
-        fc7 = F.leaky_relu(self.bn7(self.fc7(fc6), 0.2, inplace=True))
+        fc7 = F.leaky_relu(self.fc7(fc6), 0.2, inplace=True)
         fc7 = self.dropout7(fc7)
 
         fc8 = self.fc8(fc7)
@@ -270,7 +269,7 @@ class Discriminator_model_patch(nn.Module):
         self.conv5_2 = norm(nn.Conv2d(start_channel*8, start_channel*16, kernel_size=3, stride=1, padding=1))
 
         # [1024, 8, 8]
-        self.patch_layer = norm(nn.Conv2d(start_channel*16, domain_num, kernel_size=3, stride=1, padding=1))
+        self.patch_layer = nn.Conv2d(start_channel*16, domain_num, kernel_size=3, stride=1, padding=1)
         # [3, 8, 8]
         self.avg_pool2 = nn.AdaptiveAvgPool2d((1, 1))
 
@@ -371,6 +370,60 @@ class Discriminator_model_patch_v2(nn.Module):
 
         return patch_out
 
+class Discriminator_model_patch_v3(nn.Module):
+    def __init__(self, in_channels=3, domain_num=3, start_channel=64):
+        super(Discriminator_model_patch_v2, self).__init__()
+        norm = spectral_norm
+        # [3, 128, 128]
+        self.conv1 = nn.Conv2d(in_channels, start_channel, kernel_size=3, stride=1, padding=1)
+
+        # [64, 128, 128]
+        self.conv2_1 = norm(nn.Conv2d(start_channel, start_channel, kernel_size=3, stride=2, padding=1))
+        self.conv2_2 = norm(nn.Conv2d(start_channel, start_channel*2, kernel_size=3, stride=1, padding=1))
+
+        # [128, 64, 64]
+        self.conv3_1 = norm(nn.Conv2d(start_channel*2, start_channel*2, kernel_size=3, stride=2, padding=1))
+        self.conv3_2 = norm(nn.Conv2d(start_channel*2, start_channel*4, kernel_size=3, stride=1, padding=1))
+
+        # [256, 32, 32]
+        self.conv4_1 = norm(nn.Conv2d(start_channel*4, start_channel*4, kernel_size=3, stride=2, padding=1))
+        self.conv4_2 = norm(nn.Conv2d(start_channel*4, start_channel*8, kernel_size=3, stride=1, padding=1))
+
+        # [512, 16, 16]
+        self.conv5_1 = norm(nn.Conv2d(start_channel*8, start_channel*8, kernel_size=3, stride=2, padding=1))
+        self.conv5_2 = norm(nn.Conv2d(start_channel*8, start_channel*16, kernel_size=3, stride=1, padding=1))
+
+        # [1024, 8, 8]
+        self.patch_layer = nn.Conv2d(start_channel*16, domain_num, kernel_size=3, stride=1, padding=1)
+        # [3, 8, 8]
+
+    def forward(self, x):
+        conv1 = F.leaky_relu(self.conv1(x), 0.2, inplace=True)
+
+        conv2_1 = F.leaky_relu(self.conv2_1(conv1), 0.2, inplace=True)
+        conv2_2 = F.leaky_relu(self.conv2_2(conv2_1), 0.2, inplace=True)
+
+        conv3_1 = F.leaky_relu(self.conv3_1(conv2_2), 0.2, inplace=True)
+        conv3_2 = F.leaky_relu(self.conv3_2(conv3_1), 0.2, inplace=True)
+
+        conv4_1 = F.leaky_relu(self.conv4_1(conv3_2), 0.2, inplace=True)
+        conv4_2 = F.leaky_relu(self.conv4_2(conv4_1), 0.2, inplace=True)
+
+        conv5_1 = F.leaky_relu(self.conv5_1(conv4_2), 0.2, inplace=True)
+        conv5_2 = F.leaky_relu(self.conv5_2(conv5_1), 0.2, inplace=True)
+
+        patch_feature = self.patch_layer(conv5_2)
+
+        # [8, 3, 8, 8]
+        patch_feature = patch_feature.view(patch_feature.size(0), patch_feature.size(1), patch_feature.size(2) * patch_feature.size(3))
+        # [8, 3, 64]
+        patch_out = patch_feature.permute(0, 2, 1)
+        # [8, 64, 3]
+        patch_out = patch_out.contiguous().view(patch_out.size(0) * patch_out.size(1), patch_out.size(2))
+        # [512, 3]
+
+        return patch_out
+
 
 # Encoder
 class Discriminator_encoder_v1(nn.Module):
@@ -402,8 +455,13 @@ class Discriminator_encoder_v1(nn.Module):
 class Discriminator_encoder_v2(nn.Module):
     def __init__(self, in_channels=512, domain_num=3):
         super(Discriminator_encoder_v2, self).__init__()
+        # [512, 8, 8]
         self.conv1_1 = nn.Conv2d(in_channels, in_channels, kernel_size=3, stride=1, padding=1)
+
+        # [512, 8, 8]
         self.pool1 = nn.MaxPool2d(kernel_size=2)
+
+        # [512, 4, 4]
         self.conv1_2 = nn.Conv2d(in_channels, in_channels, kernel_size=3, stride=1, padding=1)
 
         self.avg_pool2 = nn.AdaptiveAvgPool2d((1, 1))
