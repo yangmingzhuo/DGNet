@@ -372,7 +372,7 @@ class Discriminator_model_patch_v2(nn.Module):
 
 class Discriminator_model_patch_v3(nn.Module):
     def __init__(self, in_channels=3, domain_num=3, start_channel=64):
-        super(Discriminator_model_patch_v2, self).__init__()
+        super(Discriminator_model_patch_v3, self).__init__()
         norm = spectral_norm
         # [3, 128, 128]
         self.conv1 = nn.Conv2d(in_channels, start_channel, kernel_size=3, stride=1, padding=1)
