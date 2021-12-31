@@ -241,7 +241,7 @@ def main():
                                  src_path3=os.path.join(opt.data_dir, opt.data_set3, 'train'),
                                  patch_size=opt.patch_size, train=True)
     train_sampler = DistributedSampler(train_set)
-    train_data_loader = DataLoader(dataset=train_set, batch_size=opt.batch_size,
+    train_data_loader = DataLoaderX(dataset=train_set, batch_size=opt.batch_size,
                             num_workers=opt.num_workers, pin_memory=True, sampler=train_sampler)
     ddp_logger_info('Train dataset length: {} 1:{} 2:{} 3:{}'.format(len(train_data_loader), train_set.len1, train_set.len2,
                                                                      train_set.len3), logger, opt.local_rank)
@@ -249,7 +249,7 @@ def main():
     val_set = LoadDataset_ceph(src_path=os.path.join(opt.data_dir, opt.data_set_test, 'test'),
                           patch_size=opt.test_patch_size, train=False)
     val_sampler = DistributedSampler(val_set)
-    val_data_loader = DataLoader(dataset=val_set, batch_size=opt.test_batch_size, shuffle=False,
+    val_data_loader = DataLoaderX(dataset=val_set, batch_size=opt.test_batch_size, shuffle=False,
                                   num_workers=opt.num_workers, pin_memory=True, sampler=val_sampler)
     ddp_logger_info('Validation dataset length: {}'.format(len(val_data_loader)), logger, opt.local_rank)
 
