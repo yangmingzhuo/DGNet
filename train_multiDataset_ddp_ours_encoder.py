@@ -165,7 +165,7 @@ def main():
     parser.add_argument('--data_set2', type=str, default='renoir', help='the exact dataset 2 we want to train on')
     parser.add_argument('--data_set3', type=str, default='nind', help='the exact dataset 3 we want to train on')
     parser.add_argument('--data_set_test', type=str, default='rid2021', help='the exact dataset 4 we want to test on')
-    parser.add_argument('--data_dir', type=str, default='/mnt/lustre/share/yangmingzhuo/processed', help='the dataset dir')
+    parser.add_argument('--data_dir', type=str, default='s3://denoising_data_bucket/', help='the dataset dir')
     parser.add_argument('--batch_size', type=int, default=8, help='training batch size: 32')
     parser.add_argument('--patch_size', type=int, default=128, help='Size of cropped HR image')
     parser.add_argument('--test_batch_size', type=int, default=32, help='testing batch size, default=1')
@@ -236,20 +236,20 @@ def main():
     # load dataset
     ddp_logger_info('Loading datasets {}, {}, {}, Batch Size: {}, Patch Size: {}'
                     .format(opt.data_set1, opt.data_set2, opt.data_set3, opt.batch_size, opt.patch_size), logger, opt.local_rank)
-    train_set = LoadMultiDataset(src_path1=os.path.join(opt.data_dir, opt.data_set1, 'train'),
+    train_set = LoadMultiDataset_ceph(src_path1=os.path.join(opt.data_dir, opt.data_set1, 'train'),
                                  src_path2=os.path.join(opt.data_dir, opt.data_set2, 'train'),
                                  src_path3=os.path.join(opt.data_dir, opt.data_set3, 'train'),
                                  patch_size=opt.patch_size, train=True)
     train_sampler = DistributedSampler(train_set)
-    train_data_loader = DataLoaderX(dataset=train_set, batch_size=opt.batch_size,
-                                    num_workers=opt.num_workers, pin_memory=True, sampler=train_sampler)
+    train_data_loader = DataLoader(dataset=train_set, batch_size=opt.batch_size,
+                            num_workers=opt.num_workers, pin_memory=True, sampler=train_sampler)
     ddp_logger_info('Train dataset length: {} 1:{} 2:{} 3:{}'.format(len(train_data_loader), train_set.len1, train_set.len2,
                                                                      train_set.len3), logger, opt.local_rank)
 
-    val_set = LoadDataset(src_path=os.path.join(opt.data_dir, opt.data_set_test, 'test'),
+    val_set = LoadDataset_ceph(src_path=os.path.join(opt.data_dir, opt.data_set_test, 'test'),
                           patch_size=opt.test_patch_size, train=False)
     val_sampler = DistributedSampler(val_set)
-    val_data_loader = DataLoaderX(dataset=val_set, batch_size=opt.test_batch_size, shuffle=False,
+    val_data_loader = DataLoader(dataset=val_set, batch_size=opt.test_batch_size, shuffle=False,
                                   num_workers=opt.num_workers, pin_memory=True, sampler=val_sampler)
     ddp_logger_info('Validation dataset length: {}'.format(len(val_data_loader)), logger, opt.local_rank)
 
@@ -294,6 +294,7 @@ def main():
     if opt.pretrain_model != '':
         model, at_net, start_epoch, optimizer, optimizer_ad, psnr_best = \
             load_model_ad_net(opt.pretrain_model, model, ad_net, optimizer, optimizer_ad, logger, opt.local_rank)
+        grl_layer.iter_num = start_epoch * len(train_data_loader)
         start_epoch += 1
         for i in range(1, start_epoch):
             scheduler.step()
