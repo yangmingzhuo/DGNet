@@ -66,9 +66,9 @@ def train(opt, epoch, model, ad_net, grl_layer, data_loader, optimizer, optimize
         l1_loss = criterion(prediction, target)
         denoise_ad_loss = get_ad_loss(denoise_ad_out, label)
         target_ad_loss = get_ad_loss(target_ad_out, label)
-        # kl_loss = get_kl_loss(denoise_ad_out, target_ad_out, T)
-        total_loss = l1_loss + opt.lambda_ad * (denoise_ad_loss + target_ad_loss)
-        # total_loss = l1_loss + opt.lambda_ad * (denoise_ad_loss + target_ad_loss) + opt.lambda_kl * kl_loss
+        kl_loss = get_kl_loss(denoise_ad_out, target_ad_out, T)
+        # total_loss = l1_loss + opt.lambda_ad * (denoise_ad_loss + target_ad_loss)
+        total_loss = l1_loss + opt.lambda_ad * (denoise_ad_loss + target_ad_loss) + opt.lambda_kl * kl_loss
 
         # backward
         optimizer.zero_grad()
@@ -83,7 +83,7 @@ def train(opt, epoch, model, ad_net, grl_layer, data_loader, optimizer, optimize
         reduced_l1_loss = reduce_mean(l1_loss, opt.nProcs)
         reduced_denoise_ad_loss = reduce_mean(denoise_ad_loss, opt.nProcs)
         reduced_target_ad_loss = reduce_mean(target_ad_loss, opt.nProcs)
-        # reduced_kl_loss = reduce_mean(kl_loss, opt.nProcs)
+        reduced_kl_loss = reduce_mean(kl_loss, opt.nProcs)
         reduced_total_loss = reduce_mean(total_loss, opt.nProcs)
         reduced_denoise_acc = reduce_mean(torch.Tensor([denoise_acc]).cuda(opt.local_rank, non_blocking=True), opt.nProcs)
         reduced_target_acc = reduce_mean(torch.Tensor([target_acc]).cuda(opt.local_rank, non_blocking=True), opt.nProcs)
@@ -91,7 +91,7 @@ def train(opt, epoch, model, ad_net, grl_layer, data_loader, optimizer, optimize
         epoch_l1_loss.update(reduced_l1_loss.item(), noisy.size(0))
         epoch_denoise_ad_loss.update(reduced_denoise_ad_loss.item(), noisy.size(0))
         epoch_target_ad_loss.update(reduced_target_ad_loss.item(), noisy.size(0))
-        # epoch_kl_loss.update(reduced_kl_loss.item(), noisy.size(0))
+        epoch_kl_loss.update(reduced_kl_loss.item(), noisy.size(0))
         epoch_total_loss.update(reduced_total_loss.item(), noisy.size(0))
         epoch_denoise_acc.update(reduced_denoise_acc.item(), noisy.size(0))
         epoch_target_acc.update(reduced_target_acc.item(), noisy.size(0))
