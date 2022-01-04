@@ -165,7 +165,7 @@ def reverse_pixelshuffle_2(image, scale):
     [Return]: Recombine it using different portions of pixels
     '''
     w, h, c = image.shape
-    real = np.zeros((w*scale, h*scale, 1))  # real image
+    real = np.zeros((w*scale, h*scale, int(c/scale/scale)))  # real image
     for ws in range(scale):
         for hs in range(scale):
             real[ws::scale, hs::scale, :] = image[:, :, ::scale]
