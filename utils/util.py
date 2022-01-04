@@ -139,6 +139,39 @@ def reverse_pixelshuffle(image, scale, fill=0, fill_image=0, ind=[0, 0]):
     return real
 
 
+def pixelshuffle_2(image, scale):
+    '''
+    Discription: Given an image, return a reversible sub-sampling
+    [Input]: Image ndarray float
+    [Return]: A mosic image of shuffled pixels
+    '''
+    if scale == 1:
+        return image
+    w, h, c = image.shape
+    mosaic = np.array([])
+    for ws in range(scale):
+        band = np.array([])
+        for hs in range(scale):
+            temp = image[ws::scale, hs::scale, :]  # get the sub-sampled image
+            band = np.concatenate((band, temp), axis=2) if band.size else temp
+        mosaic = np.concatenate((mosaic, band), axis=2) if mosaic.size else band
+    return mosaic
+
+
+def reverse_pixelshuffle_2(image, scale):
+    '''
+    Discription: Given a mosaic image of subsampling, recombine it to a full image
+    [Input]: Image
+    [Return]: Recombine it using different portions of pixels
+    '''
+    w, h, c = image.shape
+    real = np.zeros((w*scale, h*scale, 1))  # real image
+    for ws in range(scale):
+        for hs in range(scale):
+            real[ws::scale, hs::scale, :] = image[:, :, ::scale]
+    return real
+
+
 class AverageMeter(object):
     def __init__(self):
         self.val = 0
