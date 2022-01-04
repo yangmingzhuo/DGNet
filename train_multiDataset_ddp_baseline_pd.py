@@ -171,7 +171,7 @@ def main():
     ddp_logger_info('Loading datasets {}, {}, {}, Batch Size: {}, Patch Size: {}'
                     .format(opt.data_set1, opt.data_set2, opt.data_set3, opt.batch_size, opt.patch_size), logger,
                     opt.local_rank)
-    train_set = LoadMultiDataset(src_path1=os.path.join(opt.data_dir, opt.data_set1, 'train'),
+    train_set = LoadMultiDataset_ceph_pd(src_path1=os.path.join(opt.data_dir, opt.data_set1, 'train'),
                                       src_path2=os.path.join(opt.data_dir, opt.data_set2, 'train'),
                                       src_path3=os.path.join(opt.data_dir, opt.data_set3, 'train'),
                                       patch_size=opt.patch_size, train=True)
@@ -182,7 +182,7 @@ def main():
         'Train dataset length: {} 1:{} 2:{} 3:{}'.format(len(train_data_loader), train_set.len1, train_set.len2,
                                                          train_set.len3), logger, opt.local_rank)
 
-    val_set = LoadDataset(src_path=os.path.join(opt.data_dir, opt.data_set_test, 'test'),
+    val_set = LoadDataset_ceph_pd(src_path=os.path.join(opt.data_dir, opt.data_set_test, 'test'),
                                patch_size=opt.test_patch_size, train=False)
     val_sampler = DistributedSampler(val_set)
     val_data_loader = DataLoaderX(dataset=val_set, batch_size=opt.test_batch_size, shuffle=False,
