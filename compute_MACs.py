@@ -21,3 +21,6 @@ print('--'*20)
 print('MAC = {}G, FLOPS={}G'.format(mac, mac*2))
 print("params = {}G".format(params))
 
+# MAC = 3.426533376G, FLOPS=6.853066752G
+# params = 0.007760163G
+
